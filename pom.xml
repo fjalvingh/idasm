@@ -1,0 +1,180 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+		 xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+		 xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>to.etc.idas</groupId>
+	<artifactId>idas</artifactId>
+	<version>1.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+	<name>Interactive disassembler</name>
+
+	<distributionManagement>
+		<site>
+			<id>maven</id>
+			<name>maven</name>
+			<url>./</url>
+		</site>
+	</distributionManagement>
+
+	<organization>
+		<name>etc.to</name>
+		<url>http://etc.to/</url>
+	</organization>
+
+	<developers>
+		<developer>
+			<id>jal</id>
+			<name>Frits</name>
+			<email>jal@etc.to</email>
+			<organization>etc.to</organization>
+			<organizationUrl>http://www.domui.org/</organizationUrl>
+			<roles>
+				<role>architect</role>
+				<role>developer</role>
+			</roles>
+			<timezone>+1</timezone>
+		</developer>
+	</developers>
+
+	<properties>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
+		<maven-failsafe-plugin.version>2.22.2</maven-failsafe-plugin.version>
+		<maven-surefire.version>2.22.2</maven-surefire.version>
+
+		<!-- JDK properties -->
+		<source.jdk.version>11</source.jdk.version>
+		<target.jdk.version>11</target.jdk.version>
+		<ecj.version>3.20.0</ecj.version>
+
+		<!-- Plugin versions -->
+		<maven-javadoc-plugin.version>3.0.1</maven-javadoc-plugin.version>
+		<maven-compiler-plugin.version>3.7.0</maven-compiler-plugin.version>
+		<plexus-compiler-eclipse.version>2.8.5</plexus-compiler-eclipse.version>
+		<maven-source-plugin.version>3.0.1</maven-source-plugin.version>
+		<maven.jar.plugin.version>3.2.0</maven.jar.plugin.version>
+	</properties>
+
+	<prerequisites>
+		<maven>3.5.0</maven>
+	</prerequisites>
+
+	<dependencies>
+
+		<!-- https://mvnrepository.com/artifact/args4j/args4j -->
+		<dependency>
+			<groupId>args4j</groupId>
+			<artifactId>args4j</artifactId>
+			<version>2.33</version>
+		</dependency>
+	</dependencies>
+
+
+	<build>
+		<plugins>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-dependency-plugin</artifactId>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<version>${maven-compiler-plugin.version}</version>
+				<configuration>
+					<compilerId>eclipse</compilerId>
+					<source>${source.jdk.version}</source>
+					<target>${target.jdk.version}</target>
+					<!-- Passing arguments is a trainwreck, see https://issues.apache.org/jira/browse/MCOMPILER-123 -->
+					<compilerArgs>
+						<arg>-properties</arg>
+						<arg>${project.basedir}/.settings/org.eclipse.jdt.core.prefs</arg>
+						<arg>-nowarn</arg>
+					</compilerArgs>
+
+					<showWarnings>false</showWarnings>
+					<showDeprecation>true</showDeprecation>
+				</configuration>
+
+				<dependencies>
+					<dependency>
+						<groupId>org.codehaus.plexus</groupId>
+						<artifactId>plexus-compiler-eclipse</artifactId>
+						<version>${plexus-compiler-eclipse.version}</version>
+					</dependency>
+
+					<dependency>
+						<groupId>org.eclipse.jdt</groupId>
+						<artifactId>ecj</artifactId>
+						<version>${ecj.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-surefire-plugin</artifactId>
+				<version>${maven-surefire.version}</version>
+				<configuration>
+					<argLine>-XX:+UseParallelGC</argLine>
+				</configuration>
+			</plugin>
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<version>${maven-source-plugin.version}</version>
+			</plugin>
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-javadoc-plugin</artifactId>
+				<version>${maven-javadoc-plugin.version}</version>
+			</plugin>
+
+
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-shade-plugin</artifactId>
+				<version>3.1.0</version>
+				<executions>
+					<execution>
+						<phase>package</phase>
+						<goals>
+							<goal>shade</goal>
+						</goals>
+						<configuration>
+							<finalName>tu58t</finalName>
+							<minimizeJar>false</minimizeJar>
+							<createDependencyReducedPom>false</createDependencyReducedPom>
+							<shadedArtifactAttached>true</shadedArtifactAttached>
+							<shadedClassifierName>jar-with-dependencies</shadedClassifierName>
+
+							<transformers>
+								<transformer
+										implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+									<mainClass>to.etc.dec.tu58.Main</mainClass>
+								</transformer>
+							</transformers>
+
+							<!-- see https://stackoverflow.com/questions/999489/invalid-signature-file-when-attempting-to-run-a-jar -->
+							<filters>
+								<filter>
+									<artifact>*:*</artifact>
+									<excludes>
+										<exclude>META-INF/*.SF</exclude>
+										<exclude>META-INF/*.DSA</exclude>
+										<exclude>META-INF/*.RSA</exclude>
+									</excludes>
+								</filter>
+							</filters>
+						</configuration>
+					</execution>
+				</executions>
+			</plugin>
+
+		</plugins>
+	</build>
+
+</project>
