@@ -77,6 +77,17 @@ public class PdpDisassembler implements IDisassembler {
 					ctx.appendOperand(",");
 					ctx.appendOperand(decodeAddressing(ctx, inst));
 					return;
+
+				case 0077000:
+					ctx.mnemonic("sob");
+					ctx.appendOperand(reg(inst >> 6));
+					ctx.appendOperand(",");
+					int off = inst & 0x3f;
+					if((off & 0x20) != 0)
+						off |= 0xffffffc0;
+					off = ctx.getCurrentAddress() + 2 * off;
+					ctx.appendOperand(ctx.valueInBase(off));
+					return;
 			}
 
 			String source = decodeAddressing(ctx, (inst >> 6) & 077);
@@ -264,9 +275,65 @@ public class PdpDisassembler implements IDisassembler {
 			return;
 		}
 
+		if((inst >> 9) == 004) {			// jsr
+			ctx.mnemonic("jsr");
+			ctx.appendOperand(reg(inst >> 6));
+			ctx.appendOperand(",");
+			ctx.appendOperand(decodeAddressing(ctx, inst));
+			return;
+		}
 
+		if((inst >> 3) == 020) {
+			ctx.mnemonic("rts");
+			ctx.appendOperand(reg(inst));
+			return;
+		}
 
+		if((inst >> 6) == 0064) {
+			ctx.mnemonic("mark");
+			ctx.appendOperand(ctx.valueInBase(inst & 0x3f));
+			return;
+		}
 
+		if((inst >> 8) == 0210) {
+			ctx.mnemonic("emt");
+			ctx.appendOperand(ctx.valueInBase(inst & 0xff));
+			return;
+		}
+		if((inst >> 8) == 0211) {
+			ctx.mnemonic("trap");
+			ctx.appendOperand(ctx.valueInBase(inst & 0xff));
+			return;
+		}
+
+		switch(inst) {
+			case 0:
+				ctx.mnemonic("halt");
+				break;
+
+			case 1:
+				ctx.mnemonic("wait");
+				break;
+
+			case 02:
+				ctx.mnemonic("rti");
+				return;
+
+			case 03:
+				ctx.mnemonic("bpt");
+				return;
+			case 04:
+				ctx.mnemonic("iot");
+				return;
+
+			case 05:
+				ctx.mnemonic("reset");
+				break;
+
+			case 06:
+				ctx.mnemonic("rtt");
+				return;
+		}
 	}
 
 	private String decodeAddressing(DisContext ctx, int pat) {
@@ -324,6 +391,7 @@ public class PdpDisassembler implements IDisassembler {
 	}
 
 	private String reg(int regno) {
+		regno &= 07;
 		if(regno == 7)
 			return "pc";
 		if(regno == 6)
