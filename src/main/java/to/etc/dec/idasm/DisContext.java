@@ -184,9 +184,9 @@ public class DisContext {
 		return alt;
 	}
 
-	public void addAutoLabel(int address, AddrTarget type) {
+	public Label addAutoLabel(int address, AddrTarget type) {
 		String name = "L" + valueInBase(address);
-		addLabel(address, name, type);
+		return addLabel(address, name, type);
 	}
 
 	public List<Label> getLabels(int address) {

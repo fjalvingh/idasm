@@ -88,8 +88,8 @@ public class PdpDisassembler implements IDisassembler {
 					if((off & 0x20) != 0)
 						off |= 0xffffffc0;
 					off = ctx.getCurrentAddress() + 2 * off;
-					ctx.addAutoLabel(off, AddrTarget.Code);
-					ctx.appendOperand(ctx.valueInBase(off));
+					Label label = ctx.addAutoLabel(off, AddrTarget.Code);
+					ctx.appendOperand(label.getName());
 					return;
 			}
 
@@ -275,8 +275,8 @@ public class PdpDisassembler implements IDisassembler {
 				offset |= 0xffffff00;
 			}
 			int addr = ctx.getCurrentAddress() + offset * 2;
-			ctx.appendOperand(ctx.valueInBase(addr));
-			ctx.addAutoLabel(addr, AddrTarget.Code);
+			Label label = ctx.addAutoLabel(addr, AddrTarget.Code);
+			ctx.appendOperand(label.getName());
 			return;
 		}
 
@@ -308,6 +308,25 @@ public class PdpDisassembler implements IDisassembler {
 		if((inst >> 8) == 0211) {
 			ctx.mnemonic("trap");
 			ctx.appendOperand(ctx.valueInBase(inst & 0xff));
+			return;
+		}
+
+		if(inst == 0240 || inst == 0260) {
+			//-- Scc/Ccc without flags = nop
+			ctx.mnemonic("nop");
+			return;
+		}
+
+		if((inst >> 4) == 012) {
+			//Cnn
+			ctx.mnemonic("Ccc");
+			ctx.appendOperand(decodeFlags(inst));
+			return;
+		}
+		if((inst >> 4) == 013) {
+			//Cnn
+			ctx.mnemonic("Scc");
+			ctx.appendOperand(decodeFlags(inst));
 			return;
 		}
 
@@ -343,6 +362,19 @@ public class PdpDisassembler implements IDisassembler {
 		ctx.mnemonic("ILLEGAL");
 	}
 
+	private String decodeFlags(int inst) {
+		StringBuilder sb = new StringBuilder();
+		if((inst & 0x8) != 0)
+			sb.append("N");
+		if((inst & 0x4) != 0)
+			sb.append("Z");
+		if((inst & 0x2) != 0)
+			sb.append("V");
+		if((inst & 0x1) != 0)
+			sb.append("C");
+		return sb.toString();
+	}
+
 	private String decodeAddressing(DisContext ctx, int pat, AddrTarget target) {
 		int m = (pat >> 3) & 07;
 		int r = (pat & 07);
@@ -353,14 +385,15 @@ public class PdpDisassembler implements IDisassembler {
 					int imm = ctx.getWordLE();
 					if(target == AddrTarget.Code) {
 						//-- jump target
-						ctx.addAutoLabel(imm, target);
+						Label label = ctx.addAutoLabel(imm, target);
+						return label.getName();
 					}
 					return "#" + ctx.valueInBase(imm);
 
 				case 3:
 					int abs = ctx.getWordLE();
-					ctx.addAutoLabel(abs, target);
-					return "@#" + ctx.valueInBase(abs);
+					Label label = ctx.addAutoLabel(abs, target);
+					return "@#" + label.getName();
 
 				case 6:
 					int relpc = ctx.getWordLE();
