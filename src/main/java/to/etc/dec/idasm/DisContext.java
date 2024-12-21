@@ -1,5 +1,10 @@
 package to.etc.dec.idasm;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 /**
  * Disassembler context.
  */
@@ -25,6 +30,8 @@ public class DisContext {
 
 	private StringBuilder m_operandString = new StringBuilder();
 
+	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
+
 	public DisContext(int dataSize, byte[] memory, NumericBase base) {
 		m_dataSize = dataSize;
 		m_memory = memory;
@@ -48,6 +55,13 @@ public class DisContext {
 			throw new IllegalStateException("Address overflow");
 		}
 		return m_memory[m_currentAddress++] & 0xff;
+	}
+
+	public int byteAt(int addr) {
+		if(addr >= m_dataSize) {
+			throw new IllegalStateException("Address overflow");
+		}
+		return m_memory[addr] & 0xff;
 	}
 
 	public int getByte() {
@@ -154,4 +168,30 @@ public class DisContext {
 	public String getOperandString() {
 		return m_operandString.toString();
 	}
+
+	public Label addLabel(int address, String label, AddrTarget type) {
+		List<Label> list = m_labelMap.computeIfAbsent(address, k -> new ArrayList<>());
+		Label alt = list.stream()
+			.filter(a -> a.getAddress() == address && a.getName().equals(label))
+			.findFirst()
+			.orElse(null);
+		if(null != alt) {
+			alt.from(m_startAddress);
+			return alt;
+		}
+		alt = new Label(address, label, type).from(m_startAddress);
+		list.add(alt);
+		return alt;
+	}
+
+	public void addAutoLabel(int address, AddrTarget type) {
+		String name = "L" + valueInBase(address);
+		addLabel(address, name, type);
+	}
+
+	public List<Label> getLabels(int address) {
+		return m_labelMap.get(address);
+	}
+
+
 }
