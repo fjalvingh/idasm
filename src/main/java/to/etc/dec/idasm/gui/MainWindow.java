@@ -1,13 +1,14 @@
 package to.etc.dec.idasm.gui;
 
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
+import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 
 import javax.swing.*;
 
 final public class MainWindow extends JFrame {
 	private final IByteSource m_source;
 
-	private final DisassemblyModel m_model;
+	private DisassemblyModel m_model;
 
 	public MainWindow(IByteSource source) throws Exception {
 		m_source = source;
@@ -17,12 +18,19 @@ final public class MainWindow extends JFrame {
 		//getContentPane().add(button);
 		setSize(1024, 768);
 
-		JTable table = new JTable();
-		m_model = new DisassemblyModel(source);
-		m_model.initialize();
+		if(false) {
+			JTable table = new JTable();
+			m_model = new DisassemblyModel(source);
+			m_model.initialize();
 
-		table.setModel(m_model.getTableModel());
-		getContentPane().add(new JScrollPane(table));
+			table.setModel(m_model.getTableModel());
+			getContentPane().add(new JScrollPane(table));
+		} else {
+			JDisasmPanel dp = new JDisasmPanel(m_source, new PdpDisassembler());
+			dp.setSize(1024, 1024);
+			getContentPane().add(dp);
+		}
+
 
 		pack();
 		setVisible(true);
