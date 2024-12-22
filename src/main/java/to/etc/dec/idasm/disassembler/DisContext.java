@@ -1,5 +1,7 @@
 package to.etc.dec.idasm.disassembler;
 
+import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -9,16 +11,14 @@ import java.util.Map;
  * Disassembler context.
  */
 public class DisContext {
+	private final IByteSource m_byteSource;
+
 	private int m_currentAddress;
 
 	/**
 	 * Start address of the current instruction
 	 */
 	private int m_startAddress;
-
-	private final int m_dataSize;
-
-	private final byte[] m_memory;
 
 	private final NumericBase m_base;
 
@@ -32,9 +32,8 @@ public class DisContext {
 
 	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
 
-	public DisContext(int dataSize, byte[] memory, NumericBase base) {
-		m_dataSize = dataSize;
-		m_memory = memory;
+	public DisContext(IByteSource data, NumericBase base) {
+		m_byteSource = data;
 		m_base = base;
 	}
 
@@ -45,23 +44,23 @@ public class DisContext {
 	public void start() {
 		m_startAddress = m_currentAddress;
 		m_instBytes.setLength(0);
-		m_addressString = getBaseValue(m_startAddress, m_dataSize <= 65536 ? 2 : 4);
+		m_addressString = getBaseValue(m_startAddress, m_byteSource.getEndAddress() <= 65536 ? 2 : 4);
 		m_operandString.setLength(0);
 		m_opcodeString = "";
 	}
 
 	private int nextByte() {
-		if(m_currentAddress >= m_dataSize) {
-			throw new IllegalStateException("Address overflow");
-		}
-		return m_memory[m_currentAddress++] & 0xff;
+		return byteAt(m_currentAddress++);
 	}
 
 	public int byteAt(int addr) {
-		if(addr >= m_dataSize) {
-			throw new IllegalStateException("Address overflow");
+		if(addr < m_byteSource.getStartAddress())
+			throw new IllegalStateException("Current address 0x" + Integer.toHexString(m_currentAddress) + " is below the start address 0x" + Long.toHexString(m_byteSource.getStartAddress()));
+
+		if(addr >= m_byteSource.getEndAddress()) {
+			throw new IllegalStateException("Current address 0x" + Integer.toHexString(m_currentAddress) + " is above the end address 0x" + Long.toHexString(m_byteSource.getEndAddress()));
 		}
-		return m_memory[addr] & 0xff;
+		return m_byteSource.getByte(addr);
 	}
 
 	public int getByte() {
@@ -143,10 +142,6 @@ public class DisContext {
 
 	public int getCurrentAddress() {
 		return m_currentAddress;
-	}
-
-	public int getDataSize() {
-		return m_dataSize;
 	}
 
 	public int getStartAddress() {

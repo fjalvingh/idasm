@@ -9,16 +9,21 @@ import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.NumericBase;
+import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
+import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
+import to.etc.dec.idasm.gui.MainWindow;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.util.List;
 import java.util.TreeSet;
 
 public class Main {
 	@Option(name = "-i", required = true, usage = "The input file")
 	private String m_input;
+
+	@Option(name = "-g", required = false, usage = "Use the GUI")
+	private boolean m_gui;
 
 	static public void main(String[] args) throws Exception {
 		new Main().run(args);
@@ -35,19 +40,26 @@ public class Main {
 			System.exit(10);
 		}
 
-		byte[] data = loadFile();
+		IByteSource data = loadFile();
 
-		disassemble(data, 036352, data.length);
+		if(m_gui) {
+			runGUI();
+		} else {
+			disassemble(data, 036352, data.getEndAddress());
+		}
 
 
+	}
 
+	private void runGUI() {
+		new MainWindow();
 	}
 
 	/**
 	 * Do a multipass disassembly to resolve all labels.
 	 */
-	private void disassemble(byte[] data, int from, int to) throws Exception {
-		DisContext ctx = new DisContext(data.length, data, NumericBase.Oct);
+	private void disassemble(IByteSource data, int from, int to) throws Exception {
+		DisContext ctx = new DisContext(data, NumericBase.Oct);
 		IDisassembler das = new PdpDisassembler();
 
 		//-- Pass 1: detect labels
@@ -162,18 +174,9 @@ public class Main {
 	/**
 	 * Load the specified file into the memory array.
 	 */
-	private byte[] loadFile() throws Exception {
+	private IByteSource loadFile() throws Exception {
 		File inf = new File(m_input);
-		int len = (int) inf.length();
-		if(len > 65535)
-			throw new Exception("File is > 64K");
-		byte[] addr = new byte[len];
-		try(FileInputStream fis = new FileInputStream(inf)) {
-			return fis.readAllBytes();
-			//if(read != len)
-			//	throw new Exception("Cannot read file fully: only " + read + " of " + len + " bytes");
-		}
-		//return addr;
+		return new FileByteSource(inf);
 	}
 
 
