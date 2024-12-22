@@ -41,6 +41,18 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private int m_maxAscent;
 
+	private int m_leftMargin = 10;
+
+	private int m_spacing = 20;
+
+	private int m_bytesSize;
+
+	private int m_charsSize;
+
+	private int m_addrSize;
+
+	private int m_mnemSize;
+
 	public JDisasmPanel(IByteSource source, IDisassembler disassembler) throws Exception {
 		m_source = source;
 		m_disassembler = disassembler;
@@ -101,8 +113,17 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_disassembler.disassemble(m_context);
 
 		//-- Start rendering
-		g.drawString(m_context.getAddressString(), 10, m_yPos + m_maxAscent);
-
+		int y = m_yPos + m_maxAscent;
+		int x = m_leftMargin;
+		g.drawString(m_context.getAddressString(), x, y);
+		x	+= m_addrSize + m_spacing;
+		g.drawString(m_context.getInstBytes(), x, y);
+		x	+= m_bytesSize + m_spacing;
+		g.drawString(m_context.getAsciiBytes(), x, y);
+		x	+= m_charsSize + m_spacing;
+		g.drawString(m_context.getOpcodeString(), x, y);
+		x	+= m_mnemSize + m_spacing;
+		g.drawString(m_context.getOperandString(), x, y);
 		m_yPos += m_fontHeight;
 	}
 
@@ -127,8 +148,42 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			});
 			m_panelHeight = m_yPos;
 			//setSize(1024, m_panelHeight);
+
+			//-- Calculate sizes
+			int addrSize = m_context.getCharsInBase(m_disassembler.getAddressSizeInBits());
+			m_addrSize	= fontMetrics.stringWidth(calculateMeasureString(addrSize));
+
+			int chars = m_disassembler.getMaxInstructionSizeInChars(m_context.getBase());
+			m_bytesSize = fontMetrics.stringWidth(calculateMeasureString(chars));
+			m_charsSize	= fontMetrics.stringWidth(calculateMeasureString(8));
+
+			m_mnemSize	= fontMetrics.stringWidth(calculateMeasureString(m_disassembler.getMaxMnemonicSize(), 'm'));
+
+
+
+
+
+
+
+
+
+
+
 			m_initialized = true;
 		}
+	}
+
+	private String calculateMeasureString(int chars) {
+		return calculateMeasureString(chars, '0');
+	}
+
+
+	private String calculateMeasureString(int chars, char c) {
+		StringBuilder sb = new StringBuilder();
+		while(sb.length() < chars) {
+			sb.append(c);
+		}
+		return sb.toString();
 	}
 
 	private void addLine(int address, int yPos) {

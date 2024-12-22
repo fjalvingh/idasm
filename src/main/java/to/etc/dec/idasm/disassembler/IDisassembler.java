@@ -7,4 +7,13 @@ public interface IDisassembler {
 	 * Sets default options for this disassembly.
 	 */
 	void configureDefaults(DisContext context) throws Exception;
+
+	/**
+	 * Returns the max size of an instruction.
+	 */
+	int getMaxInstructionSizeInChars(NumericBase base);
+
+	int getAddressSizeInBits();
+
+	int getMaxMnemonicSize();
 }

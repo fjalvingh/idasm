@@ -11,6 +11,27 @@ public class PdpDisassembler implements IDisassembler {
 		context.setBase(NumericBase.Oct);
 	}
 
+	@Override public int getAddressSizeInBits() {
+		return 16;
+	}
+
+	@Override public int getMaxMnemonicSize() {
+		return 7;
+	}
+
+	@Override public int getMaxInstructionSizeInChars(NumericBase base) {
+		switch(base) {
+			default:
+				throw new IllegalStateException(base + "??");
+
+			case Oct:
+				return 6 * 4;
+
+			case Hex:
+				return 4 * 4;
+		}
+	}
+
 	@Override public void disassemble(DisContext ctx) throws Exception {
 		int inst = ctx.getWordLE();
 

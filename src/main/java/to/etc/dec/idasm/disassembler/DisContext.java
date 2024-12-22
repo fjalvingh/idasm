@@ -100,6 +100,8 @@ public class DisContext {
 	}
 
 	private void appendReadVal(int value, int bytes) {
+		if(m_instBytes.length() > 0)
+			m_instBytes.append(' ');
 		String v = valueInBase(value);
 		int chars = m_base.getSizeForBytes(bytes);
 		chars -= v.length();
@@ -219,5 +221,16 @@ public class DisContext {
 			return null;
 		}
 		return lm.stream().map(a -> a.getName() + ": ").collect(Collectors.joining());
+	}
+
+	/**
+	 * Return the #of characters that is required to
+	 * render a number of the specified #of bits in
+	 * the current base.
+	 */
+	public int getCharsInBase(int bitSize) {
+		double maxValue = Math.pow(2, bitSize);		// The max value of such a number
+		double chars = Math.log(maxValue) / Math.log(m_base.getBase());
+		return (int) Math.ceil(chars);
 	}
 }
