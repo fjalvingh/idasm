@@ -8,7 +8,7 @@ import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import javax.swing.*;
 import java.awt.*;
 
-public class JDisasmPanel extends JPanel {
+public class JDisasmPanel extends JPanel implements Scrollable {
 	private final IByteSource m_source;
 
 	private final IDisassembler m_disassembler;
@@ -34,7 +34,7 @@ public class JDisasmPanel extends JPanel {
 	}
 
 	@Override public Dimension getPreferredSize() {
-		return new Dimension(1024, 1024);
+		return new Dimension(1024, 8192);
 	}
 
 	@Override public void paintComponent(Graphics g) {
@@ -94,7 +94,7 @@ public class JDisasmPanel extends JPanel {
 
 		});
 		m_panelHeight = m_yPos;
-		setSize(1024, m_panelHeight);
+		//setSize(1024, m_panelHeight);
 	}
 
 	private void addLine(int address) {
@@ -104,5 +104,30 @@ public class JDisasmPanel extends JPanel {
 			m_lineAddresses = li;
 		}
 		m_lineAddresses[m_lineCount++] = address;
+	}
+
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Scrollable interface										*/
+	/*----------------------------------------------------------------------*/
+
+	@Override public Dimension getPreferredScrollableViewportSize() {
+		return new Dimension(1024, 1024);
+	}
+
+	@Override public int getScrollableUnitIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return m_fontHeight;
+	}
+
+	@Override public int getScrollableBlockIncrement(Rectangle visibleRect, int orientation, int direction) {
+		return m_fontHeight * 20;
+	}
+
+	@Override public boolean getScrollableTracksViewportWidth() {
+		return false;
+	}
+
+	@Override public boolean getScrollableTracksViewportHeight() {
+		return false;
 	}
 }

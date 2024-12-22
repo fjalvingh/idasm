@@ -27,8 +27,9 @@ final public class MainWindow extends JFrame {
 			getContentPane().add(new JScrollPane(table));
 		} else {
 			JDisasmPanel dp = new JDisasmPanel(m_source, new PdpDisassembler());
-			dp.setSize(1024, 1024);
-			getContentPane().add(dp);
+			dp.setSize(1024, 8192);
+			JScrollPane sp = new JScrollPane(dp);
+			getContentPane().add(sp);
 		}
 
 
