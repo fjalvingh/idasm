@@ -6,6 +6,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 /**
  * Disassembler context.
@@ -20,7 +21,7 @@ public class DisContext {
 	 */
 	private int m_startAddress;
 
-	private final NumericBase m_base;
+	private NumericBase m_base = NumericBase.Hex;
 
 	private final StringBuilder m_instBytes = new StringBuilder();
 
@@ -32,9 +33,16 @@ public class DisContext {
 
 	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
 
-	public DisContext(IByteSource data, NumericBase base) {
+	public DisContext(IByteSource data) {
 		m_byteSource = data;
+	}
+
+	public void setBase(NumericBase base) {
 		m_base = base;
+	}
+
+	public NumericBase getBase() {
+		return m_base;
 	}
 
 	public void setCurrentAddress(int currentAddress) {
@@ -152,6 +160,22 @@ public class DisContext {
 		return m_instBytes.toString();
 	}
 
+	public String getAsciiBytes() {
+		StringBuilder sb = new StringBuilder();
+		int pos = m_startAddress;
+		while(pos < m_currentAddress) {
+			int val = byteAt(pos++);
+			if(val < 32) {
+				sb.append('.');
+			} else if(val < 128) {
+				sb.append((char) val);
+			} else if(val > 128) {
+				sb.append('.');
+			}
+		}
+		return sb.toString();
+	}
+
 	public String getAddressString() {
 		return m_addressString;
 	}
@@ -189,4 +213,11 @@ public class DisContext {
 	}
 
 
+	public String getLabelsAsString() {
+		List<Label> lm = m_labelMap.get(m_startAddress);
+		if(null == lm) {
+			return null;
+		}
+		return lm.stream().map(a -> a.getName() + ": ").collect(Collectors.joining());
+	}
 }

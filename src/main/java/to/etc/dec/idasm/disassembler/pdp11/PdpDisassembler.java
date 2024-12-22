@@ -4,8 +4,12 @@ import to.etc.dec.idasm.disassembler.AddrTarget;
 import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.NumericBase;
 
 public class PdpDisassembler implements IDisassembler {
+	@Override public void configureDefaults(DisContext context) throws Exception {
+		context.setBase(NumericBase.Oct);
+	}
 
 	@Override public void disassemble(DisContext ctx) throws Exception {
 		int inst = ctx.getWordLE();

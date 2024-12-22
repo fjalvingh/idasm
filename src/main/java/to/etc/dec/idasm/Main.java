@@ -6,9 +6,8 @@ import org.kohsuke.args4j.Option;
 import to.etc.dec.idasm.cmdline.AttributedLine;
 import to.etc.dec.idasm.cmdline.Renderer;
 import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.Label;
-import to.etc.dec.idasm.disassembler.NumericBase;
 import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
@@ -43,43 +42,15 @@ public class Main {
 		IByteSource data = loadFile();
 
 		if(m_gui) {
-			runGUI();
+			runGUI(data);
 		} else {
-			disassemble(data, 036352, data.getEndAddress());
+			PdpDisassembler das = new PdpDisassembler();
+			DisassemblerMain.disassemble(das, data, 036352, data.getEndAddress(), disContext -> display(disContext));
 		}
-
-
 	}
 
-	private void runGUI() {
-		new MainWindow();
-	}
-
-	/**
-	 * Do a multipass disassembly to resolve all labels.
-	 */
-	private void disassemble(IByteSource data, int from, int to) throws Exception {
-		DisContext ctx = new DisContext(data, NumericBase.Oct);
-		IDisassembler das = new PdpDisassembler();
-
-		//-- Pass 1: detect labels
-		ctx.setCurrentAddress(from);
-		while(ctx.getCurrentAddress() < to) {
-			ctx.start();
-			das.disassemble(ctx);
-		}
-
-		//-- Pass 2: output
-		ctx.setCurrentAddress(from);
-		while(ctx.getCurrentAddress() < to) {
-			ctx.start();
-			das.disassemble(ctx);
-
-			display(ctx);
-		}
-
-
-
+	private void runGUI(IByteSource data) throws Exception {
+		new MainWindow(data);
 	}
 
 	private final int TAB_BYTES = 8;
