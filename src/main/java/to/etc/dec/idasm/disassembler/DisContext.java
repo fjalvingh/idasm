@@ -1,4 +1,4 @@
-package to.etc.dec.idasm;
+package to.etc.dec.idasm.disassembler;
 
 import java.util.ArrayList;
 import java.util.HashMap;

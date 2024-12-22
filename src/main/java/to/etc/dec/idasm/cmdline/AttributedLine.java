@@ -1,4 +1,4 @@
-package to.etc.dec.idasm;
+package to.etc.dec.idasm.cmdline;
 
 /**
  * Used to render syntax highlighting mixed with other

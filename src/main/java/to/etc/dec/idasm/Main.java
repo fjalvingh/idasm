@@ -3,6 +3,13 @@ package to.etc.dec.idasm;
 import org.kohsuke.args4j.CmdLineException;
 import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
+import to.etc.dec.idasm.cmdline.AttributedLine;
+import to.etc.dec.idasm.cmdline.Renderer;
+import to.etc.dec.idasm.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.NumericBase;
+import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 
 import java.io.File;
 import java.io.FileInputStream;

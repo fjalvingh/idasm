@@ -1,4 +1,9 @@
-package to.etc.dec.idasm;
+package to.etc.dec.idasm.disassembler.pdp11;
+
+import to.etc.dec.idasm.disassembler.AddrTarget;
+import to.etc.dec.idasm.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.Label;
 
 public class PdpDisassembler implements IDisassembler {
 
