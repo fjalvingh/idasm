@@ -9,8 +9,12 @@ public class DisassemblerMain {
 	 */
 	static public DisContext disassemble(IDisassembler das, IByteSource data, int from, int to, ConsumerEx<DisContext> listener) throws Exception {
 		DisContext ctx = new DisContext(data);
-		//IDisassembler das = new PdpDisassembler();
 		das.configureDefaults(ctx);
+		disassemble(ctx, das, from, to, listener);
+		return ctx;
+	}
+
+	public static void disassemble(DisContext ctx, IDisassembler das, int from, int to, ConsumerEx<DisContext> listener) throws Exception {
 
 		//-- Pass 1: detect labels
 		ctx.setCurrentAddress(from);
@@ -26,7 +30,6 @@ public class DisassemblerMain {
 			das.disassemble(ctx);
 			listener.accept(ctx);
 		}
-		return ctx;
 	}
 
 }

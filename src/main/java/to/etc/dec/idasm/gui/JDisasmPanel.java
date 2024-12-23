@@ -3,16 +3,20 @@ package to.etc.dec.idasm.gui;
 import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import javax.swing.*;
 import java.awt.*;
 import java.util.Arrays;
+import java.util.List;
 
 public class JDisasmPanel extends JPanel implements Scrollable {
 	private final IByteSource m_source;
 
 	private final IDisassembler m_disassembler;
+
+	private final int m_startAddress = 036352;
 
 	/**
 	 * The addresses for each line of the disassembly.
@@ -41,6 +45,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private int m_maxAscent;
 
+	private FontMetrics m_fontMetrics;
+
 	private int m_leftMargin = 10;
 
 	private int m_spacing = 20;
@@ -52,6 +58,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	private int m_addrSize;
 
 	private int m_mnemSize;
+
+	private int m_labelStartX;
 
 	public JDisasmPanel(IByteSource source, IDisassembler disassembler) throws Exception {
 		m_source = source;
@@ -71,7 +79,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	@Override public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		try {
-			Graphics2D g2d= (Graphics2D) g;
+			Graphics2D g2d = (Graphics2D) g;
 			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
@@ -91,16 +99,18 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				index = -(index + 1);
 			}
 			if(index > 0)
-				index--;						// Get one line before
-			m_yPos = m_posMap[index];			// That will render here,
+				index--;                        // Get one line before
+			m_yPos = m_posMap[index];            // That will render here,
 			int endY = fromY + g.getClipBounds().height;
 			int addr = m_lineAddresses[index];
 
 			System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
 			m_context.setCurrentAddress(addr);
 			while(m_yPos < endY) {
-				System.out.println("-- renderLine @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
-				renderLine(g, index);
+				System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
+				m_context.start();
+				m_disassembler.disassemble(m_context);
+				renderLine(g, m_context);
 				index++;
 			}
 		} catch(Exception x) {
@@ -108,67 +118,82 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 	}
 
-	private void renderLine(Graphics g, int line) throws Exception {
-		m_context.start();
-		m_disassembler.disassemble(m_context);
+	private void renderLine(Graphics g, DisContext context) throws Exception {
+		//-- Do we have label(s)?
+		List<Label> labels = context.getLabels(context.getStartAddress());
+		if(null != labels && !labels.isEmpty()) {
+			g.setColor(Color.BLUE);
+			int x = m_labelStartX;
+			for(Label label : labels) {
+				String s = label.getName() + ": ";
+				int width = m_fontMetrics.stringWidth(s);
+				if(x + width > getSize().width) {
+					x = m_labelStartX;
+					m_yPos += m_fontHeight;
+				}
+				g.drawString(s, x, m_yPos + m_maxAscent);
+			}
+			m_yPos += m_maxAscent;
+		}
 
-		//-- Start rendering
+		//-- Start rendering the instruction
 		int y = m_yPos + m_maxAscent;
 		int x = m_leftMargin;
-		g.drawString(m_context.getAddressString(), x, y);
-		x	+= m_addrSize + m_spacing;
-		g.drawString(m_context.getInstBytes(), x, y);
-		x	+= m_bytesSize + m_spacing;
-		g.drawString(m_context.getAsciiBytes(), x, y);
-		x	+= m_charsSize + m_spacing;
-		g.drawString(m_context.getOpcodeString(), x, y);
-		x	+= m_mnemSize + m_spacing;
-		g.drawString(m_context.getOperandString(), x, y);
+		g.setColor(Color.GRAY);
+		g.drawString(context.getAddressString(), x, y);
+		x += m_addrSize + m_spacing;
+		g.drawString(context.getInstBytes(), x, y);
+		x += m_bytesSize + m_spacing;
+		g.drawString(context.getAsciiBytes(), x, y);
+		x += m_charsSize + m_spacing;
+		g.setColor(Color.BLACK);
+		g.drawString(context.getOpcodeString(), x, y);
+		x += m_mnemSize + m_spacing;
+		g.drawString(context.getOperandString(), x, y);
 		m_yPos += m_fontHeight;
 	}
 
 	private void initialize() throws Exception {
 		if(!m_initialized) {
+			DisContext ctx = m_context = new DisContext(m_source);
+			m_disassembler.configureDefaults(ctx);
+
 			Graphics g = getGraphics();
-			Graphics2D g2d= (Graphics2D) g;
+			Graphics2D g2d = (Graphics2D) g;
 			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
 			g2d.setRenderingHint(RenderingHints.KEY_FRACTIONALMETRICS, RenderingHints.VALUE_FRACTIONALMETRICS_ON);
 			g2d.setFont(m_font);
 
-			FontMetrics fontMetrics = g.getFontMetrics();
+			FontMetrics fontMetrics = m_fontMetrics = g.getFontMetrics();
 
 			m_fontHeight = fontMetrics.getHeight();
 			m_maxAscent = fontMetrics.getMaxAscent();
 			m_panelHeight = 0;
 			m_yPos = 0;
-			m_context = DisassemblerMain.disassemble(m_disassembler, m_source, 036352, m_source.getEndAddress(), a -> {
-				addLine(a.getStartAddress(), m_yPos);
-				m_yPos += m_fontHeight;
-			});
-			m_panelHeight = m_yPos;
 			//setSize(1024, m_panelHeight);
 
 			//-- Calculate sizes
 			int addrSize = m_context.getCharsInBase(m_disassembler.getAddressSizeInBits());
-			m_addrSize	= fontMetrics.stringWidth(calculateMeasureString(addrSize));
+			m_addrSize = fontMetrics.stringWidth(calculateMeasureString(addrSize));
 
 			int chars = m_disassembler.getMaxInstructionSizeInChars(m_context.getBase());
 			m_bytesSize = fontMetrics.stringWidth(calculateMeasureString(chars));
-			m_charsSize	= fontMetrics.stringWidth(calculateMeasureString(8));
+			m_charsSize = fontMetrics.stringWidth(calculateMeasureString(8));
 
-			m_mnemSize	= fontMetrics.stringWidth(calculateMeasureString(m_disassembler.getMaxMnemonicSize(), 'm'));
+			m_mnemSize = fontMetrics.stringWidth(calculateMeasureString(m_disassembler.getMaxMnemonicSize(), 'm'));
 
+			m_labelStartX = m_leftMargin + m_addrSize
+				+ m_spacing + m_bytesSize
+				+ m_spacing + m_charsSize;
 
+			DisassemblerMain.disassemble(ctx, m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
+				addLine(a.getStartAddress(), m_yPos);
+				renderLine(g, a);
+				//m_yPos += m_fontHeight;
+			});
 
-
-
-
-
-
-
-
-
+			m_panelHeight = m_yPos;
 			m_initialized = true;
 		}
 	}
