@@ -20,7 +20,7 @@ final public class FileByteSource implements IByteSource {
 		if(address > Integer.MAX_VALUE) {
 			throw new IndexOutOfBoundsException("address 0x" + Long.toHexString(address) + " is greater than 0x" + Integer.toHexString(Integer.MAX_VALUE));
 		}
-		return m_memory[(int) address];
+		return m_memory[(int) address] & 0xff;
 	}
 
 	@Override public int getEndAddress() {

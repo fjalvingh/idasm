@@ -102,6 +102,22 @@ public class DisContext {
 	private void appendReadVal(int value, int bytes) {
 		if(m_instBytes.length() > 0)
 			m_instBytes.append(' ');
+		switch(bytes) {
+			default:
+				throw new IllegalStateException(bytes + "?");
+
+			case 1:
+				value &= 0xff;
+				break;
+
+			case 2:
+				value &= 0xffff;
+				break;
+
+			case 4:
+				break;
+		}
+
 		String v = valueInBase(value);
 		int chars = m_base.getSizeForBytes(bytes);
 		chars -= v.length();
