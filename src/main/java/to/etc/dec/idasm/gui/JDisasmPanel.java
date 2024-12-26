@@ -331,9 +331,21 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 			int addr = m_lineAddresses[index];			// The address of the line
 			if(e.isShiftDown()) {
+				//-- We want to select multiple lines..
+				int newSelStart = m_selectionStart;
+				int newSelEnd = m_selectionEnd;
+				clearSelection();						// Remove the old selection
+				if(addr < newSelStart) {
+					newSelStart = addr;			// Extend from the front
+				} else {
+					//-- Inclusive selection -> we need the next address
+					newSelEnd = m_lineAddresses[index + 1];
+				}
+				m_selectionStart = newSelStart;
+				m_selectionEnd = newSelEnd;
 
-
-
+				//-- Calculate positions
+				repaintSelection();
 			} else {
 				//-- Clear the previous selection and select only this new line.
 				clearSelection();
@@ -348,6 +360,12 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	 * Remove the previous selection by asking for a repaint.
 	 */
 	private void clearSelection() {
+		repaintSelection();
+		m_selectionStart = 0;
+		m_selectionEnd = 0;
+	}
+
+	private void repaintSelection() {
 		if(m_selectionStart >= m_selectionEnd)					// Nothing selected?
 			return;
 		int startIndex = calculateIndexByAddr(m_selectionStart);
@@ -361,12 +379,6 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			return;
 
 		repaint(0L, 0, startY, getSize().width, endY);
-		m_selectionStart = 0;
-		m_selectionEnd = 0;
-	}
-
-	private void repaintSelection() {
-
 	}
 
 }
