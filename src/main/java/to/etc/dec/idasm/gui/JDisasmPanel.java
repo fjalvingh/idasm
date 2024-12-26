@@ -8,6 +8,9 @@ import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.MouseListener;
 import java.util.Arrays;
 import java.util.List;
 
@@ -74,6 +77,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_source = source;
 		m_disassembler = disassembler;
 		setBorder(BorderFactory.createLineBorder(Color.BLACK));
+		addMouseListener(m_mouseListener);
 	}
 
 	@Override public Dimension getPreferredSize() {
@@ -95,12 +99,12 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			g2d.setFont(m_font);
 
 			int fromY = g.getClipBounds().y;
-			System.out.println(
-				"repaint: "
-					+ g.getClipBounds().width
-					+ " x " + g.getClipBounds().height
-					+ " @ " + g.getClipBounds().x + ", " + g.getClipBounds().y
-			);
+			//System.out.println(
+			//	"repaint: "
+			//		+ g.getClipBounds().width
+			//		+ " x " + g.getClipBounds().height
+			//		+ " @ " + g.getClipBounds().x + ", " + g.getClipBounds().y
+			//);
 
 			//-- Calculate the closest Y line
 			int index = Arrays.binarySearch(m_posMap, 0, m_lineCount, fromY);
@@ -113,10 +117,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			int endY = fromY + g.getClipBounds().height;
 			int addr = m_lineAddresses[index];
 
-			System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
+			//System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
 			m_context.setCurrentAddress(addr);
 			while(m_yPos < endY) {
-				System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
+				//System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
 
 				if(inSelection(m_context)) {
 					//-- Render a background rectangle with the selection color.
@@ -232,6 +236,31 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 	}
 
+	/**
+	 * Calculate the index in the line arrays for the specified Y position.
+	 */
+	private int calculateIndexByY(int y) {
+		//-- Calculate the closest Y line
+		int index = Arrays.binarySearch(m_posMap, 0, m_lineCount, y);
+		if(index < 0) {
+			index = -(index + 1);
+		}
+		return index - 1;						// As y is always >= the location found the index is always AFTER that location, we need it AT the location
+	}
+
+	/**
+	 * Calculate the line index by address.
+	 */
+	private int calculateIndexByAddr(int address) {
+		//-- Calculate the closest address
+		int index = Arrays.binarySearch(m_lineAddresses, 0, m_lineCount, address);
+		if(index < 0) {
+			index = -(index + 1);
+		}
+		return index - 1;						// As y is always >= the location found the index is always AFTER that location, we need it AT the location
+	}
+
+
 	private String calculateMeasureString(int chars) {
 		return calculateMeasureString(chars, '0');
 	}
@@ -284,4 +313,60 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	@Override public boolean getScrollableTracksViewportHeight() {
 		return false;
 	}
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Mouse listener												*/
+	/*----------------------------------------------------------------------*/
+	private final MouseListener m_mouseListener = new MouseAdapter() {
+		@Override public void mouseClicked(MouseEvent e) {
+			//Point rp = JDisasmPanel.this.getMousePosition();
+			System.out.println("mouseClicked " + e.getX() + "," + e.getY());
+		}
+
+		@Override public void mousePressed(MouseEvent e) {
+			//-- In which line have we clicked?
+			int index = calculateIndexByY(e.getY());
+			if(index == -1)
+				return;
+
+			int addr = m_lineAddresses[index];			// The address of the line
+			if(e.isShiftDown()) {
+
+
+
+			} else {
+				//-- Clear the previous selection and select only this new line.
+				clearSelection();
+				m_selectionStart = addr;
+				m_selectionEnd = m_lineAddresses[index + 1];
+				repaint(0L, 0, m_posMap[index], getSize().width, m_posMap[index + 1]);
+			}
+		}
+	};
+
+	/**
+	 * Remove the previous selection by asking for a repaint.
+	 */
+	private void clearSelection() {
+		if(m_selectionStart >= m_selectionEnd)					// Nothing selected?
+			return;
+		int startIndex = calculateIndexByAddr(m_selectionStart);
+		int endIndex = calculateIndexByAddr(m_selectionEnd);
+		if(startIndex == -1 || endIndex == -1) {
+			return;
+		}
+		int startY = m_posMap[startIndex];
+		int endY = m_posMap[endIndex];
+		if(startY >= endY)
+			return;
+
+		repaint(0L, 0, startY, getSize().width, endY);
+		m_selectionStart = 0;
+		m_selectionEnd = 0;
+	}
+
+	private void repaintSelection() {
+
+	}
+
 }
