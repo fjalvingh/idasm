@@ -18,6 +18,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private final int m_startAddress = 036352;
 
+	private final Color m_selectionColor = new Color(0, 220, 220);
+
 	/**
 	 * The addresses for each line of the disassembly.
 	 */
@@ -60,6 +62,13 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	private int m_mnemSize;
 
 	private int m_labelStartX;
+
+	/** Selection start address */
+	private int m_selectionStart = 036500;
+
+	/** Selection end address (exclusive) */
+	private int m_selectionEnd = 036530;
+
 
 	public JDisasmPanel(IByteSource source, IDisassembler disassembler) throws Exception {
 		m_source = source;
@@ -108,9 +117,20 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			m_context.setCurrentAddress(addr);
 			while(m_yPos < endY) {
 				System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
+
+				if(inSelection(m_context)) {
+					//-- Render a background rectangle with the selection color.
+					int selEndY = m_posMap[index + 1];
+					g.setColor(m_selectionColor);
+					g.fillRect(0, m_yPos, getSize().width, selEndY - m_yPos);
+					g.setColor(Color.BLACK);
+				}
+
 				m_context.start();
 				m_disassembler.disassemble(m_context);
-				renderLine(g, m_context);
+
+				int height = renderLine(g, m_context, m_yPos, false);
+				m_yPos += height;
 				index++;
 			}
 		} catch(Exception x) {
@@ -118,7 +138,18 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 	}
 
-	private void renderLine(Graphics g, DisContext context) throws Exception {
+	private boolean inSelection(DisContext dc) {
+		return dc.getCurrentAddress() >= m_selectionStart && dc.getCurrentAddress() < m_selectionEnd;
+	}
+
+	/**
+	 * Render a line, or just calculate its height.
+	 * @return The height of the rendered area
+	 *
+	 */
+	private int renderLine(Graphics g, DisContext context, int atY, boolean calculateHeightOnly) throws Exception {
+		int y = atY + m_maxAscent;							// The baseline to draw at
+
 		//-- Do we have label(s)?
 		List<Label> labels = context.getLabels(context.getStartAddress());
 		if(null != labels && !labels.isEmpty()) {
@@ -129,28 +160,31 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				int width = m_fontMetrics.stringWidth(s);
 				if(x + width > getSize().width) {
 					x = m_labelStartX;
-					m_yPos += m_fontHeight;
+					y += m_fontHeight;
 				}
-				g.drawString(s, x, m_yPos + m_maxAscent);
+				if(!calculateHeightOnly)
+					g.drawString(s, x, y);
 			}
-			m_yPos += m_maxAscent;
+			y += m_fontHeight;
 		}
 
 		//-- Start rendering the instruction
-		int y = m_yPos + m_maxAscent;
-		int x = m_leftMargin;
-		g.setColor(Color.GRAY);
-		g.drawString(context.getAddressString(), x, y);
-		x += m_addrSize + m_spacing;
-		g.drawString(context.getInstBytes(), x, y);
-		x += m_bytesSize + m_spacing;
-		g.drawString(context.getAsciiBytes(), x, y);
-		x += m_charsSize + m_spacing;
-		g.setColor(Color.BLACK);
-		g.drawString(context.getOpcodeString(), x, y);
-		x += m_mnemSize + m_spacing;
-		g.drawString(context.getOperandString(), x, y);
-		m_yPos += m_fontHeight;
+		if(!calculateHeightOnly) {
+			int x = m_leftMargin;
+			g.setColor(Color.GRAY);
+			g.drawString(context.getAddressString(), x, y);
+			x += m_addrSize + m_spacing;
+			g.drawString(context.getInstBytes(), x, y);
+			x += m_bytesSize + m_spacing;
+			g.drawString(context.getAsciiBytes(), x, y);
+			x += m_charsSize + m_spacing;
+			g.setColor(Color.BLACK);
+			g.drawString(context.getOpcodeString(), x, y);
+			x += m_mnemSize + m_spacing;
+			g.drawString(context.getOperandString(), x, y);
+		}
+		y += m_fontHeight;
+		return y - atY - m_maxAscent;
 	}
 
 	private void initialize() throws Exception {
@@ -189,8 +223,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 			DisassemblerMain.disassemble(ctx, m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
 				addLine(a.getStartAddress(), m_yPos);
-				renderLine(g, a);
-				//m_yPos += m_fontHeight;
+				int height = renderLine(g, a, m_yPos, true);
+				m_yPos += height;
 			});
 
 			m_panelHeight = m_yPos;
