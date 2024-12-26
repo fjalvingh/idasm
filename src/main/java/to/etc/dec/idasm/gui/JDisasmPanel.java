@@ -8,6 +8,7 @@ import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import javax.swing.*;
 import java.awt.*;
+import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
@@ -144,6 +145,13 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private boolean inSelection(DisContext dc) {
 		return dc.getCurrentAddress() >= m_selectionStart && dc.getCurrentAddress() < m_selectionEnd;
+	}
+
+	/**
+	 * Return T if the address specified is inside a code area.
+	 */
+	private boolean inCodeArea(int addr) {
+		return true;
 	}
 
 	/**
@@ -324,34 +332,43 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 
 		@Override public void mousePressed(MouseEvent e) {
-			//-- In which line have we clicked?
-			int index = calculateIndexByY(e.getY());
-			if(index == -1)
-				return;
+			if(e.getButton() == MouseEvent.BUTTON1) {
+				//-- In which line have we clicked?
+				int index = calculateIndexByY(e.getY());
+				if(index == -1)
+					return;
 
-			int addr = m_lineAddresses[index];			// The address of the line
-			if(e.isShiftDown()) {
-				//-- We want to select multiple lines..
-				int newSelStart = m_selectionStart;
-				int newSelEnd = m_selectionEnd;
-				clearSelection();						// Remove the old selection
-				if(addr < newSelStart) {
-					newSelStart = addr;			// Extend from the front
+				int addr = m_lineAddresses[index];			// The address of the line
+				if(e.isShiftDown()) {
+					//-- We want to select multiple lines..
+					int newSelStart = m_selectionStart;
+					int newSelEnd = m_selectionEnd;
+					clearSelection();						// Remove the old selection
+					if(addr < newSelStart) {
+						newSelStart = addr;			// Extend from the front
+					} else {
+						//-- Inclusive selection -> we need the next address
+						newSelEnd = m_lineAddresses[index + 1];
+					}
+					m_selectionStart = newSelStart;
+					m_selectionEnd = newSelEnd;
+
+					//-- Calculate positions
+					repaintSelection();
 				} else {
-					//-- Inclusive selection -> we need the next address
-					newSelEnd = m_lineAddresses[index + 1];
+					//-- Clear the previous selection and select only this new line.
+					clearSelection();
+					m_selectionStart = addr;
+					m_selectionEnd = m_lineAddresses[index + 1];
+					repaint(0L, 0, m_posMap[index], getSize().width, m_posMap[index + 1]);
 				}
-				m_selectionStart = newSelStart;
-				m_selectionEnd = newSelEnd;
+			} else if(e.getButton() == MouseEvent.BUTTON3) {
+				int index = calculateIndexByY(e.getY());
+				if(index == -1)
+					return;
 
-				//-- Calculate positions
-				repaintSelection();
-			} else {
-				//-- Clear the previous selection and select only this new line.
-				clearSelection();
-				m_selectionStart = addr;
-				m_selectionEnd = m_lineAddresses[index + 1];
-				repaint(0L, 0, m_posMap[index], getSize().width, m_posMap[index + 1]);
+				int addr = m_lineAddresses[index];			// The address of the line
+				createPopupMenu(e.getX(), e.getY(), addr);
 			}
 		}
 	};
@@ -380,5 +397,27 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 		repaint(0L, 0, startY, getSize().width, endY);
 	}
+
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Popup Menu													*/
+	/*----------------------------------------------------------------------*/
+
+	private void createPopupMenu(int x, int y, int address) {
+		//-- Bla bla bla
+
+		//-- Create the actual menu
+		JPopupMenu pm = new JPopupMenu();
+
+		if(inCodeArea(address)) {
+			JMenuItem miData = new JMenuItem("Mark as data", KeyEvent.VK_D);
+			pm.add(miData);
+		}
+
+
+		//-- Show popup
+		pm.show(this, x, y);
+	}
+
 
 }
