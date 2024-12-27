@@ -21,7 +21,60 @@ public class RegionTests {
 	}
 
 	@Test
-	public void testRegions() {
+	public void testOverwriteFirstStartOnly() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 100, 150);
+		assertRegions(
+			RegionType.LongDataLE, 100, 150,				// <-- new one
+			RegionType.Code, 150, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+
+	@Test
+	public void testRegionOverwriteFirstFully() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 100, 200);
+		assertRegions(
+			RegionType.LongDataLE, 100, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testRegionInsertAsFirst() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 50, 60);
+		assertRegions(
+			RegionType.LongDataLE, 50, 60,				// <-- new one
+			RegionType.Code, 100, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testRegionInsertInTheMiddle() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 250, 260);
+		assertRegions(
+			RegionType.Code, 100, 200,
+			RegionType.LongDataLE, 250, 260,				// <-- new one
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+
+	@Test
+	public void testRegionsAreAsInitialized() {
 		assertRegions(
 			RegionType.Code, 100, 200,
 			RegionType.ByteData, 300, 400,
@@ -29,8 +82,6 @@ public class RegionTests {
 			RegionType.Code, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
-
-
 	}
 
 	private void assertRegions(Object... list) {
