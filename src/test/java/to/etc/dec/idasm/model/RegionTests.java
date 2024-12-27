@@ -22,9 +22,9 @@ public class RegionTests {
 
 	@Test
 	public void testOverwriteFirstStartOnly() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 100, 150);
+		m_model.addRegion(RegionType.LongDataLE, 100, 150);	// Overwrite start of 1st code
 		assertRegions(
-			RegionType.LongDataLE, 100, 150,				// <-- new one
+			RegionType.LongDataLE, 100, 150,				// <-- new one partially overwrites 1sy
 			RegionType.Code, 150, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
@@ -33,6 +33,32 @@ public class RegionTests {
 		);
 	}
 
+	@Test
+	public void testOverwriteFirstEndOnlyAtExactEnd() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 150, 200);	// Overwrite end of 1st code
+		assertRegions(
+			RegionType.Code, 100, 150,
+			RegionType.LongDataLE, 150, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testOverwriteFirstOneInTheMiddle() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 150, 160);	// Put it splat in the middle
+		assertRegions(
+			RegionType.Code, 100, 150,
+			RegionType.LongDataLE, 150, 160,
+			RegionType.Code, 160, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
 
 	@Test
 	public void testRegionOverwriteFirstFully() throws Exception {
@@ -81,6 +107,41 @@ public class RegionTests {
 			RegionType.StringAsciiC, 500, 600,
 			RegionType.Code, 600, 700,
 			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testOverwritePastEnd() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 150, 250);	// Middle of code, but past its end
+		assertRegions(
+			RegionType.Code, 100, 150,
+			RegionType.LongDataLE, 150, 250,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testOverwriteFullyFromStart() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 100, 400);	// Replace the 1st two blocks
+		assertRegions(
+			RegionType.LongDataLE, 100, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.Code, 600, 700,
+			RegionType.ByteData, 700, 800
+		);
+	}
+
+	@Test
+	public void testOverwriteFullyFromEnd() throws Exception {
+		m_model.addRegion(RegionType.LongDataLE, 600, 900);	// Put it splat in the middle
+		assertRegions(
+			RegionType.Code, 100, 200,
+			RegionType.ByteData, 300, 400,
+			RegionType.StringAsciiC, 500, 600,
+			RegionType.LongDataLE, 600, 900
 		);
 	}
 

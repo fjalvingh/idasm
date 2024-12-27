@@ -25,9 +25,10 @@ final public class RegionModel {
 		int index = 0;
 		while(index < m_regionList.size()) {
 			Region region = m_regionList.get(index);
-			if(end < region.getEnd()) {
+			if(end <= region.getStart()) {
 				//-- We're before this region. We need to insert a new one before it.
-				m_regionList.add(index, new Region(start, end, type));
+				insertRegionAt(index, type, start, end);
+				//m_regionList.add(index, new Region(start, end, type));
 				return;
 			} else if(start >= region.getEnd()) {
 				//-- Not in this region, at all. Just try the next one
@@ -69,8 +70,9 @@ final public class RegionModel {
 						insertRegionAt(index + 1, oldType, end, oldEnd);	// Insert the tail
 						return;
 					} else {
-						//-- It ends after the existing one..
-						index = setRegionAt(index, type, start, oldEnd);		// Make the existing thing the new type
+						//--
+						index = setRegionAt(index, type, start, end);		// Make the existing thing the new type
+						insertRegionAt(index + 1, oldType, end, oldEnd);
 						start = oldEnd;
 					}
 				}
@@ -81,7 +83,8 @@ final public class RegionModel {
 
 		//-- If we still have a region left it needs to be added at the end..
 		if(start < end) {
-			m_regionList.add(new Region(start, end, type));
+			insertRegionAt(index, type, start, end);
+			//m_regionList.add(new Region(start, end, type));
 		}
 	}
 
