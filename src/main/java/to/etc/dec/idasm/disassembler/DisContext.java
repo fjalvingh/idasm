@@ -61,7 +61,7 @@ public class DisContext {
 		m_opcodeString = "";
 	}
 
-	private int nextByte() {
+	public int nextByte() {
 		return byteAt(m_currentAddress++);
 	}
 
@@ -75,10 +75,35 @@ public class DisContext {
 		return m_byteSource.getByte(addr);
 	}
 
+	public long getValueAt(int addr, int size) {
+		switch()
+
+
+	}
+
 	public int getByte() {
 		int hi = nextByte();
 		appendReadVal(hi, 1);
 		return hi;
+	}
+
+	public void appendDss(int size, int count, long value) {
+		switch(size) {
+			default:
+				throw new IllegalStateException("Unknown dss value size: " + size);
+
+			case 1:
+				mnemonic("ds.b");
+				break;
+
+			case 2:
+				mnemonic("ds.w");
+				break;
+		}
+		appendOperand(valueInBase((int) value));				// FIXME 32bit?
+		appendOperand(",");
+		appendOperand(valueInBase(count));
+		m_instBytes.append(valueInBase((int) value)).append(" * ").append(valueInBase(count));
 	}
 
 	/**

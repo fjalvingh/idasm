@@ -17,18 +17,19 @@ public class RegionWalker {
 		m_model = model;
 	}
 
-	public void updateAddress(int address) {
-		if(m_currentRegion == null) {
-
-
-
-
+	public Region updateAddress(int address) {
+		Region currentRegion = m_currentRegion;
+		if(currentRegion != null) {
+			if(address < currentRegion.getEnd()) {
+				return currentRegion;
+			}
+			m_currentRegion = null;
 		}
 
-
+		if(currentRegion == null) {
+			m_currentRegionIndex = m_model.getRegionIndexByAddress(address);
+			m_currentRegion = m_model.getRegionByIndex(m_currentRegionIndex);
+		}
+		return m_currentRegion;
 	}
-
-
-
-
 }

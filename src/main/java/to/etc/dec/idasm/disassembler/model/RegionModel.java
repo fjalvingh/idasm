@@ -1,5 +1,7 @@
 package to.etc.dec.idasm.disassembler.model;
 
+import to.etc.dec.idasm.disassembler.util.Util;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -154,5 +156,16 @@ final public class RegionModel {
 
 	public List<Region> getRegionList() {
 		return m_regionList;
+	}
+
+	/**
+	 * Return the index of the Region containing the address.
+	 */
+	public int getRegionIndexByAddress(int address) {
+		int index = Util.binarySearch(m_regionList, address, a -> a.getStart(), Integer::compareTo);
+		if(index < 0) {
+			index = -(index + 1);
+		}
+		return index - 1;
 	}
 }
