@@ -9,11 +9,16 @@ final public class RegionModel {
 	 */
 	private List<Region> m_regionList = new ArrayList<>();
 
+	public RegionModel() {
+		//-- Start with a full range region
+		m_regionList.add(new Region(0, Integer.MAX_VALUE, RegionType.Code));
+	}
+
 	public int getRegionCount() {
 		return m_regionList.size();
 	}
 
-	public Region getRegionAt(int index) {
+	public Region getRegionByIndex(int index) {
 		return m_regionList.get(index);
 	}
 
@@ -125,4 +130,29 @@ final public class RegionModel {
 	}
 
 
+	public void initializeFrom(List<Region> regionList) {
+		m_regionList.clear();
+		m_regionList.addAll(regionList);
+
+		//-- Make all regions in holes
+		int lastAddress = 0;
+		int index = 0;
+		while(index < m_regionList.size()) {
+			Region region = m_regionList.get(index);
+			if(region.getStart() > lastAddress) {
+				//-- Insert a code region.
+				index = insertRegionAt(index - 1, RegionType.Code, lastAddress, region.getStart());
+				index++;
+				lastAddress = region.getEnd();
+			}
+		}
+
+		if(lastAddress < Integer.MAX_VALUE) {
+			index = insertRegionAt(m_regionList.size(), RegionType.Code, lastAddress, Integer.MAX_VALUE);
+		}
+	}
+
+	public List<Region> getRegionList() {
+		return m_regionList;
+	}
 }

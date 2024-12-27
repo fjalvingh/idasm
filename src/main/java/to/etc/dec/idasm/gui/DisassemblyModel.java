@@ -4,6 +4,7 @@ import to.etc.dec.idasm.deidioting.WrappedException;
 import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 
@@ -18,6 +19,8 @@ import javax.swing.table.TableModel;
 public class DisassemblyModel {
 	/** The source */
 	private final IByteSource m_source;
+
+	private final InfoModel m_infoModel;
 
 	/** The addresses for each line of the disassembly. */
 	private int[] m_lineAddresses = new int[8192];
@@ -107,8 +110,9 @@ public class DisassemblyModel {
 		}
 	};
 
-	public DisassemblyModel(IByteSource source) {
+	public DisassemblyModel(IByteSource source, InfoModel infoModel) {
 		m_source = source;
+		m_infoModel = infoModel;
 	}
 
 	/**
@@ -117,7 +121,7 @@ public class DisassemblyModel {
 	 */
 	public void initialize() throws Exception {
 
-		m_context = DisassemblerMain.disassemble(m_disassembler, m_source, 036352, m_source.getEndAddress(), a -> {
+		m_context = DisassemblerMain.disassemble(m_disassembler, m_source, m_infoModel, 036352, m_source.getEndAddress(), a -> {
 			addLine(a.getStartAddress());
 		});
 		m_lastDisassembledLine = -1;

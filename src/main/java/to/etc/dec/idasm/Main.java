@@ -8,6 +8,7 @@ import to.etc.dec.idasm.cmdline.Renderer;
 import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
@@ -40,17 +41,26 @@ public class Main {
 		}
 
 		IByteSource data = loadFile();
+		InfoModel infoModel = loadInfoModel();
 
 		if(m_gui) {
-			runGUI(data);
+			runGUI(data, infoModel);
 		} else {
 			PdpDisassembler das = new PdpDisassembler();
-			DisassemblerMain.disassemble(das, data, 036352, data.getEndAddress(), disContext -> display(disContext));
+			DisassemblerMain.disassemble(das, data, infoModel, 036352, data.getEndAddress(), disContext -> display(disContext));
 		}
 	}
 
-	private void runGUI(IByteSource data) throws Exception {
-		new MainWindow(data);
+	private InfoModel loadInfoModel() throws Exception {
+		String fn = m_input + ".mdl";
+		File f = new File(fn);
+		InfoModel m = new InfoModel(f);
+		m.load();
+		return m;
+	}
+
+	private void runGUI(IByteSource data, InfoModel infoModel) throws Exception {
+		new MainWindow(data, infoModel);
 	}
 
 	private final int TAB_BYTES = 8;

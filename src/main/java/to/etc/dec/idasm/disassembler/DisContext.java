@@ -1,5 +1,6 @@
 package to.etc.dec.idasm.disassembler;
 
+import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import java.util.ArrayList;
@@ -13,6 +14,8 @@ import java.util.stream.Collectors;
  */
 public class DisContext {
 	private final IByteSource m_byteSource;
+
+	private final InfoModel m_infoModel;
 
 	private int m_currentAddress;
 
@@ -33,8 +36,9 @@ public class DisContext {
 
 	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
 
-	public DisContext(IByteSource data) {
+	public DisContext(IByteSource data, InfoModel infoModel) {
 		m_byteSource = data;
+		m_infoModel = infoModel;
 	}
 
 	public void setBase(NumericBase base) {
@@ -248,5 +252,9 @@ public class DisContext {
 		double maxValue = Math.pow(2, bitSize);		// The max value of such a number
 		double chars = Math.log(maxValue) / Math.log(m_base.getBase());
 		return (int) Math.ceil(chars);
+	}
+
+	public InfoModel getInfoModel() {
+		return m_infoModel;
 	}
 }

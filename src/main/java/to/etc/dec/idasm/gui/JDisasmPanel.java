@@ -4,6 +4,8 @@ import to.etc.dec.idasm.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.model.InfoModel;
+import to.etc.dec.idasm.disassembler.model.RegionType;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import javax.swing.*;
@@ -17,6 +19,8 @@ import java.util.List;
 
 public class JDisasmPanel extends JPanel implements Scrollable {
 	private final IByteSource m_source;
+
+	private final InfoModel m_infoModel;
 
 	private final IDisassembler m_disassembler;
 
@@ -67,15 +71,20 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private int m_labelStartX;
 
-	/** Selection start address */
+	/**
+	 * Selection start address
+	 */
 	private int m_selectionStart = 036500;
 
-	/** Selection end address (exclusive) */
+	/**
+	 * Selection end address (exclusive)
+	 */
 	private int m_selectionEnd = 036530;
 
 
-	public JDisasmPanel(IByteSource source, IDisassembler disassembler) throws Exception {
+	public JDisasmPanel(IByteSource source, InfoModel infoModel, IDisassembler disassembler) throws Exception {
 		m_source = source;
+		m_infoModel = infoModel;
 		m_disassembler = disassembler;
 		setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		addMouseListener(m_mouseListener);
@@ -156,11 +165,11 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	/**
 	 * Render a line, or just calculate its height.
-	 * @return The height of the rendered area
 	 *
+	 * @return The height of the rendered area
 	 */
 	private int renderLine(Graphics g, DisContext context, int atY, boolean calculateHeightOnly) throws Exception {
-		int y = atY + m_maxAscent;							// The baseline to draw at
+		int y = atY + m_maxAscent;                            // The baseline to draw at
 
 		//-- Do we have label(s)?
 		List<Label> labels = context.getLabels(context.getStartAddress());
@@ -201,7 +210,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private void initialize() throws Exception {
 		if(!m_initialized) {
-			DisContext ctx = m_context = new DisContext(m_source);
+			DisContext ctx = m_context = new DisContext(m_source, m_infoModel);
 			m_disassembler.configureDefaults(ctx);
 
 			Graphics g = getGraphics();
@@ -253,7 +262,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		if(index < 0) {
 			index = -(index + 1);
 		}
-		return index - 1;						// As y is always >= the location found the index is always AFTER that location, we need it AT the location
+		return index - 1;                        // As y is always >= the location found the index is always AFTER that location, we need it AT the location
 	}
 
 	/**
@@ -265,9 +274,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		if(index < 0) {
 			index = -(index + 1);
 		}
-		return index - 1;						// As y is always >= the location found the index is always AFTER that location, we need it AT the location
+		return index - 1;                        // As y is always >= the location found the index is always AFTER that location, we need it AT the location
 	}
-
 
 	private String calculateMeasureString(int chars) {
 		return calculateMeasureString(chars, '0');
@@ -338,14 +346,14 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				if(index == -1)
 					return;
 
-				int addr = m_lineAddresses[index];			// The address of the line
+				int addr = m_lineAddresses[index];            // The address of the line
 				if(e.isShiftDown()) {
 					//-- We want to select multiple lines..
 					int newSelStart = m_selectionStart;
 					int newSelEnd = m_selectionEnd;
-					clearSelection();						// Remove the old selection
+					clearSelection();                        // Remove the old selection
 					if(addr < newSelStart) {
-						newSelStart = addr;			// Extend from the front
+						newSelStart = addr;            // Extend from the front
 					} else {
 						//-- Inclusive selection -> we need the next address
 						newSelEnd = m_lineAddresses[index + 1];
@@ -367,7 +375,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				if(index == -1)
 					return;
 
-				int addr = m_lineAddresses[index];			// The address of the line
+				int addr = m_lineAddresses[index];            // The address of the line
 				createPopupMenu(e.getX(), e.getY(), addr);
 			}
 		}
@@ -383,7 +391,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	}
 
 	private void repaintSelection() {
-		if(m_selectionStart >= m_selectionEnd)					// Nothing selected?
+		if(m_selectionStart >= m_selectionEnd)                    // Nothing selected?
 			return;
 		int startIndex = calculateIndexByAddr(m_selectionStart);
 		int endIndex = calculateIndexByAddr(m_selectionEnd);
@@ -409,14 +417,50 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		//-- Create the actual menu
 		JPopupMenu pm = new JPopupMenu();
 
-		if(inCodeArea(address)) {
-			JMenuItem miData = new JMenuItem("Mark as data", KeyEvent.VK_D);
-			pm.add(miData);
-		}
+		JMenuItem miSave = new JMenuItem("Save", KeyEvent.VK_S);
+		pm.add(miSave);
 
+		//JMenuItem miData = new JMenuItem("Mark as data", KeyEvent.VK_D);
+		//pm.add(miData);
+
+		JMenu menu = new JMenu("Mark as data");
+		pm.add(menu);
+
+		//-- All data types as a submenu
+		for(RegionType value : RegionType.values()) {
+			JMenuItem miItem = new JMenuItem(value.name());
+			menu.add(miItem);
+			miItem.addActionListener(e -> {
+				try {
+					actionMarkRegionAs(value);
+				} catch(Exception ex) {
+					ex.printStackTrace();
+				}
+			});
+		}
 
 		//-- Show popup
 		pm.show(this, x, y);
+	}
+
+	/**
+	 * Mark a region as a different data type.
+	 */
+	private void actionMarkRegionAs(RegionType value) throws Exception {
+		int cs = m_selectionStart;
+		int ce = m_selectionEnd;
+		if(cs >= ce)
+			return;
+
+		m_infoModel.addRegion(value, cs, ce);
+		m_infoModel.save();
+
+		redoFrom(cs);
+	}
+
+	private void redoFrom(int cs) {
+
+
 	}
 
 
