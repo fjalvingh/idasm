@@ -1,7 +1,10 @@
 package to.etc.dec.idasm.disassembler.pdp11;
 
+import org.eclipse.jdt.annotation.NonNull;
 import to.etc.dec.idasm.disassembler.AddrTarget;
+import to.etc.dec.idasm.disassembler.DataDisassembler;
 import to.etc.dec.idasm.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.IDataDisassembler;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.NumericBase;
@@ -9,6 +12,10 @@ import to.etc.dec.idasm.disassembler.NumericBase;
 public class PdpDisassembler implements IDisassembler {
 	@Override public void configureDefaults(DisContext context) throws Exception {
 		context.setBase(NumericBase.Oct);
+	}
+
+	@NonNull @Override public IDataDisassembler getDataDisassembler() {
+		return new DataDisassembler();
 	}
 
 	@Override public int getAddressSizeInBits() {
@@ -77,57 +84,57 @@ public class PdpDisassembler implements IDisassembler {
 
 				case 0170000:
 					ctx.mnemonic("mul");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
-					ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
+					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
 					return;
 
 				case 0171000:
 					ctx.mnemonic("div");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
-					ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
+					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
 					return;
 
 				case 0172000:
 					ctx.mnemonic("ash");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
-					ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
+					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
 					return;
 
 				case 0173000:
 					ctx.mnemonic("ashc");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
-					ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
+					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
 					return;
 
 				case 0174000:
 					ctx.mnemonic("xor");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
-					ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
+					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
 					return;
 
 				case 0077000:
 					ctx.mnemonic("sob");
-					ctx.appendOperand(reg(inst >> 6));
-					ctx.appendOperand(",");
+					ctx.appendOperandPart(reg(inst >> 6));
+					ctx.appendOperandPart(",");
 					int off = inst & 0x3f;
 					if((off & 0x20) != 0)
 						off |= 0xffffffc0;
 					off = ctx.getCurrentAddress() + 2 * off;
 					Label label = ctx.addAutoLabel(off, AddrTarget.Code);
-					ctx.appendOperand(label.getName());
+					ctx.appendOperandPart(label.getName());
 					return;
 			}
 
 			String source = decodeAddressing(ctx, (inst >> 6) & 077, AddrTarget.Data);
 			String dest = decodeAddressing(ctx, inst & 077, AddrTarget.Data);
-			ctx.appendOperand(source);
-			ctx.appendOperand(",");
-			ctx.appendOperand(dest);
+			ctx.appendOperandPart(source);
+			ctx.appendOperandPart(",");
+			ctx.appendOperandPart(dest);
 			return;
 		}
 
@@ -230,7 +237,7 @@ public class PdpDisassembler implements IDisassembler {
 				break;
 		}
 		if(!ctx.getOpcodeString().isEmpty()) {
-			ctx.appendOperand(decodeAddressing(ctx, inst, target));
+			ctx.appendOperandPart(decodeAddressing(ctx, inst, target));
 			return;
 		}
 
@@ -306,38 +313,38 @@ public class PdpDisassembler implements IDisassembler {
 			}
 			int addr = ctx.getCurrentAddress() + offset * 2;
 			Label label = ctx.addAutoLabel(addr, AddrTarget.Code);
-			ctx.appendOperand(label.getName());
+			ctx.appendOperandPart(label.getName());
 			return;
 		}
 
 		if((inst >> 9) == 004) {            // jsr
 			ctx.mnemonic("jsr");
-			ctx.appendOperand(reg(inst >> 6));
-			ctx.appendOperand(",");
-			ctx.appendOperand(decodeAddressing(ctx, inst, AddrTarget.Code));
+			ctx.appendOperandPart(reg(inst >> 6));
+			ctx.appendOperandPart(",");
+			ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Code));
 			return;
 		}
 
 		if((inst >> 3) == 020) {
 			ctx.mnemonic("rts");
-			ctx.appendOperand(reg(inst));
+			ctx.appendOperandPart(reg(inst));
 			return;
 		}
 
 		if((inst >> 6) == 0064) {
 			ctx.mnemonic("mark");
-			ctx.appendOperand(ctx.valueInBase(inst & 0x3f));
+			ctx.appendOperandPart(ctx.valueInBase(inst & 0x3f));
 			return;
 		}
 
 		if((inst >> 8) == 0210) {
 			ctx.mnemonic("emt");
-			ctx.appendOperand(ctx.valueInBase(inst & 0xff));
+			ctx.appendOperandPart(ctx.valueInBase(inst & 0xff));
 			return;
 		}
 		if((inst >> 8) == 0211) {
 			ctx.mnemonic("trap");
-			ctx.appendOperand(ctx.valueInBase(inst & 0xff));
+			ctx.appendOperandPart(ctx.valueInBase(inst & 0xff));
 			return;
 		}
 
@@ -350,13 +357,13 @@ public class PdpDisassembler implements IDisassembler {
 		if((inst >> 4) == 012) {
 			//Cnn
 			ctx.mnemonic("Ccc");
-			ctx.appendOperand(decodeFlags(inst));
+			ctx.appendOperandPart(decodeFlags(inst));
 			return;
 		}
 		if((inst >> 4) == 013) {
 			//Cnn
 			ctx.mnemonic("Scc");
-			ctx.appendOperand(decodeFlags(inst));
+			ctx.appendOperandPart(decodeFlags(inst));
 			return;
 		}
 

@@ -2,7 +2,6 @@ package to.etc.dec.idasm.gui;
 
 import to.etc.dec.idasm.deidioting.WrappedException;
 import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
@@ -120,8 +119,9 @@ public class DisassemblyModel {
 	 * a base model for the table.
 	 */
 	public void initialize() throws Exception {
+		DisContext ctx = m_context = new DisContext(m_source, m_infoModel);
 
-		m_context = DisassemblerMain.disassemble(m_disassembler, m_source, m_infoModel, 036352, m_source.getEndAddress(), a -> {
+		ctx.disassembleBlock(m_disassembler, 036352, m_source.getEndAddress(), a -> {
 			addLine(a.getStartAddress());
 		});
 		m_lastDisassembledLine = -1;

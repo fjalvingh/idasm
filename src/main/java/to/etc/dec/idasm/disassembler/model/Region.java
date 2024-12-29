@@ -48,4 +48,8 @@ public class Region {
 		m_start = start;
 		m_end = end;
 	}
+
+	@Override public String toString() {
+		return m_type + ":" + m_start + "-" + m_end;
+	}
 }

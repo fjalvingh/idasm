@@ -1,6 +1,10 @@
 package to.etc.dec.idasm.disassembler;
 
+import to.etc.dec.idasm.deidioting.ConsumerEx;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
+import to.etc.dec.idasm.disassembler.model.Region;
+import to.etc.dec.idasm.disassembler.model.RegionModel;
+import to.etc.dec.idasm.disassembler.model.RegionType;
 import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import java.util.ArrayList;
@@ -16,6 +20,13 @@ public class DisContext {
 	private final IByteSource m_byteSource;
 
 	private final InfoModel m_infoModel;
+
+	enum Endianness {
+		Little,
+		Big
+	}
+
+	private Endianness m_endianness = Endianness.Little;
 
 	private int m_currentAddress;
 
@@ -41,17 +52,10 @@ public class DisContext {
 		m_infoModel = infoModel;
 	}
 
-	public void setBase(NumericBase base) {
-		m_base = base;
-	}
 
-	public NumericBase getBase() {
-		return m_base;
-	}
-
-	public void setCurrentAddress(int currentAddress) {
-		m_currentAddress = currentAddress;
-	}
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Disassembly methods.										*/
+	/*----------------------------------------------------------------------*/
 
 	public void start() {
 		m_startAddress = m_currentAddress;
@@ -60,6 +64,38 @@ public class DisContext {
 		m_operandString.setLength(0);
 		m_opcodeString = "";
 	}
+
+	public void disassembleBlock(IDisassembler das, int from, int to, ConsumerEx<DisContext> listener) throws Exception {
+		//-- Pass 1: detect labels
+		setCurrentAddress(from);
+
+		while(getCurrentAddress() < to) {
+			disassembleLine(das, ctx -> {});
+		}
+
+		//-- Pass 2: output
+		setCurrentAddress(from);
+		while(getCurrentAddress() < to) {
+			disassembleLine(das, listener);
+		}
+	}
+
+	public void disassembleLine(IDisassembler das, ConsumerEx<DisContext> listener) throws Exception {
+		Region r = getRegionModel().updateAddress(getCurrentAddress());
+		start();
+		if(r.getType() == RegionType.Code) {
+			das.disassemble(this);
+		} else {
+			System.out.println("data @" + Integer.toOctalString(getStartAddress()));
+			das.getDataDisassembler().disassemble(this, r);
+		}
+		listener.accept(this);
+	}
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Getting data from the memory source							*/
+	/*----------------------------------------------------------------------*/
+
 
 	public int nextByte() {
 		return byteAt(m_currentAddress++);
@@ -75,35 +111,61 @@ public class DisContext {
 		return m_byteSource.getByte(addr);
 	}
 
-	public long getValueAt(int addr, int size) {
-		switch()
+	public int wordAt(int addr) {
+		int lo = byteAt(addr);
+		int hi = byteAt(addr + 1);
+		if(m_endianness == Endianness.Little) {
+			return lo | (hi << 8);
+		} else {
+			return hi | (lo << 8);
+		}
+	}
 
+	public int longAt(int addr) {
+		int lo = wordAt(addr);
+		int hi = wordAt(addr + 2);
+		if(m_endianness == Endianness.Little) {
+			return lo | (hi << 16);
+		} else {
+			return hi | (lo << 16);
+		}
+	}
 
+	public long getValueAt(int addr, DataType type) {
+		switch(type) {
+			default:
+				throw new IllegalStateException(type + "??");
+
+			case Byte:
+				return byteAt(addr);						// Byte, masked to 0xff
+
+			case Word:
+				return wordAt(addr);
+
+			case Long:
+				return longAt(addr) & 0xffffffff;			// Make unsigned
+
+			case SignedByte:
+				int val = byteAt(addr);
+				if((val & 0x80) != 0)
+					val |= 0xffffff00;
+				return val;
+
+			case SignedWord:
+				val = wordAt(addr);
+				if((val & 0x8000) != 0)
+					val |= 0xffff0000;
+				return val;
+
+			case SignedLong:
+				return longAt(addr);
+		}
 	}
 
 	public int getByte() {
 		int hi = nextByte();
 		appendReadVal(hi, 1);
 		return hi;
-	}
-
-	public void appendDss(int size, int count, long value) {
-		switch(size) {
-			default:
-				throw new IllegalStateException("Unknown dss value size: " + size);
-
-			case 1:
-				mnemonic("ds.b");
-				break;
-
-			case 2:
-				mnemonic("ds.w");
-				break;
-		}
-		appendOperand(valueInBase((int) value));				// FIXME 32bit?
-		appendOperand(",");
-		appendOperand(valueInBase(count));
-		m_instBytes.append(valueInBase((int) value)).append(" * ").append(valueInBase(count));
 	}
 
 	/**
@@ -127,6 +189,20 @@ public class DisContext {
 		appendReadVal(val, 2);
 		return val;
 	}
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Writing decoded data to the output buffers					*/
+	/*----------------------------------------------------------------------*/
+
+	public void appendDss(DataType size, int count, long value) {
+		mnemonic("ds." + size.getSuffix());
+
+		appendOperandPart(valueInBase((int) value));				// FIXME 32bit?
+		appendOperandPart(",");
+		appendOperandPart(valueInBase(count));
+		m_instBytes.append(valueInBase((int) value)).append(" * ").append(valueInBase(count));
+	}
+
 
 	private void appendReadVal(int value, int bytes) {
 		if(m_instBytes.length() > 0)
@@ -166,19 +242,19 @@ public class DisContext {
 		return sb.toString();
 	}
 
-	public String valueInBase(int value) {
+	public String valueInBase(long value) {
 		switch(m_base){
 			default:
 				throw new IllegalStateException("Unsupported base: " + m_base);
 
 			case Dec:
-				return Integer.toString(value);
+				return Long.toString(value);
 
 			case Hex:
-				return Integer.toHexString(value);
+				return Long.toHexString(value);
 
 			case Oct:
-				return Integer.toOctalString(value);
+				return Long.toOctalString(value);
 		}
 	}
 
@@ -191,50 +267,23 @@ public class DisContext {
 	}
 
 
-	public void appendOperand(String dest) {
+	public void appendOperandPart(String dest) {
 		m_operandString.append(dest);
 	}
 
-	public int getCurrentAddress() {
-		return m_currentAddress;
+	public void appendOperand(String val) {
+		if(m_operandString.length() != 0)
+			m_operandString.append(",");
+		m_operandString.append(val);
 	}
 
-	public int getStartAddress() {
-		return m_startAddress;
+	public boolean isOperandEmpty() {
+		return m_operandString.length() == 0;
 	}
 
-	public String getInstBytes() {
-		return m_instBytes.toString();
-	}
-
-	public String getAsciiBytes() {
-		StringBuilder sb = new StringBuilder();
-		int pos = m_startAddress;
-		while(pos < m_currentAddress) {
-			int val = byteAt(pos++);
-			if(val < 32) {
-				sb.append('.');
-			} else if(val < 128) {
-				sb.append((char) val);
-			} else if(val > 128) {
-				sb.append('.');
-			}
-		}
-		return sb.toString();
-	}
-
-	public String getAddressString() {
-		return m_addressString;
-	}
-
-	public String getOpcodeString() {
-		return m_opcodeString;
-	}
-
-	public String getOperandString() {
-		return m_operandString.toString();
-	}
-
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Labels														*/
+	/*----------------------------------------------------------------------*/
 	public Label addLabel(int address, String label, AddrTarget type) {
 		List<Label> list = m_labelMap.computeIfAbsent(address, k -> new ArrayList<>());
 		Label alt = list.stream()
@@ -282,4 +331,69 @@ public class DisContext {
 	public InfoModel getInfoModel() {
 		return m_infoModel;
 	}
+
+	public RegionModel getRegionModel() {
+		return m_infoModel.getRegionModel();
+	}
+
+	public Endianness getEndianness() {
+		return m_endianness;
+	}
+
+	public void setEndianness(Endianness endianness) {
+		m_endianness = endianness;
+	}
+
+	public void setBase(NumericBase base) {
+		m_base = base;
+	}
+
+	public NumericBase getBase() {
+		return m_base;
+	}
+
+	public void setCurrentAddress(int currentAddress) {
+		m_currentAddress = currentAddress;
+	}
+
+	public int getCurrentAddress() {
+		return m_currentAddress;
+	}
+
+	public int getStartAddress() {
+		return m_startAddress;
+	}
+
+	public String getInstBytes() {
+		return m_instBytes.toString();
+	}
+
+	public String getAsciiBytes() {
+		StringBuilder sb = new StringBuilder();
+		int pos = m_startAddress;
+		while(pos < m_currentAddress) {
+			int val = byteAt(pos++);
+			if(val < 32) {
+				sb.append('.');
+			} else if(val < 128) {
+				sb.append((char) val);
+			} else if(val > 128) {
+				sb.append('.');
+			}
+		}
+		return sb.toString();
+	}
+
+	public String getAddressString() {
+		return m_addressString;
+	}
+
+	public String getOpcodeString() {
+		return m_opcodeString;
+	}
+
+	public String getOperandString() {
+		return m_operandString.toString();
+	}
+
 }

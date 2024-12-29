@@ -14,89 +14,109 @@ public class RegionTests {
 	private RegionModel m_model = new RegionModel();
 
 	@Before
-	public void initialRegions() throws Exception {
+	public void setRegionModel() {
+		m_model = new RegionModel();
+	}
+
+	public void defaultRegions() {
 		m_model.addRegion(RegionType.StringAsciiWordBE, 100, 200);
 		m_model.addRegion(RegionType.ByteData, 300, 400);
 		m_model.addRegion(RegionType.StringAsciiC, 500, 600);
-		m_model.addRegion(RegionType.WordDataBE, 600, 700);
+		m_model.addRegion(RegionType.WordData, 600, 700);
 		m_model.addRegion(RegionType.ByteData, 700, 800);
 		assertSorted();
 	}
 
 	@Test
+	public void testAddAndRemove() throws Exception {
+		assertRegions();
+
+		m_model.addRegion(RegionType.StringAsciiWordBE, 100, 200);
+		assertRegions(RegionType.StringAsciiWordBE, 100, 200);
+		m_model.addRegion(RegionType.Code, 100, 200);
+		assertRegions();
+	}
+
+	@Test
 	public void testOverwriteFirstStartOnly() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 100, 150);	// Overwrite start of 1st code
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 100, 150);	// Overwrite start of 1st code
 		assertRegions(
-			RegionType.LongDataLE, 100, 150,				// <-- new one partially overwrites 1sy
+			RegionType.LongData, 100, 150,				// <-- new one partially overwrites 1sy
 			RegionType.StringAsciiWordBE, 150, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testOverwriteFirstEndOnlyAtExactEnd() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 150, 200);	// Overwrite end of 1st code
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 150, 200);	// Overwrite end of 1st code
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 150,
-			RegionType.LongDataLE, 150, 200,
+			RegionType.LongData, 150, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testOverwriteFirstOneInTheMiddle() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 150, 160);	// Put it splat in the middle
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 150, 160);	// Put it splat in the middle
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 150,
-			RegionType.LongDataLE, 150, 160,
+			RegionType.LongData, 150, 160,
 			RegionType.StringAsciiWordBE, 160, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testRegionOverwriteFirstFully() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 100, 200);
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 100, 200);
 		assertRegions(
-			RegionType.LongDataLE, 100, 200,
+			RegionType.LongData, 100, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testRegionInsertAsFirst() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 50, 60);
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 50, 60);
 		assertRegions(
-			RegionType.LongDataLE, 50, 60,				// <-- new one
+			RegionType.LongData, 50, 60,				// <-- new one
 			RegionType.StringAsciiWordBE, 100, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testRegionInsertInTheMiddle() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 250, 260);
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 250, 260);
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 200,
-			RegionType.LongDataLE, 250, 260,				// <-- new one
+			RegionType.LongData, 250, 260,				// <-- new one
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
@@ -104,47 +124,51 @@ public class RegionTests {
 
 	@Test
 	public void testRegionsAreAsInitialized() {
+		defaultRegions();
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testOverwritePastEnd() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 150, 250);	// Middle of code, but past its end
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 150, 250);	// Middle of code, but past its end
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 150,
-			RegionType.LongDataLE, 150, 250,
+			RegionType.LongData, 150, 250,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testOverwriteFullyFromStart() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 100, 400);	// Replace the 1st two blocks
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 100, 400);	// Replace the 1st two blocks
 		assertRegions(
-			RegionType.LongDataLE, 100, 400,
+			RegionType.LongData, 100, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.WordDataBE, 600, 700,
+			RegionType.WordData, 600, 700,
 			RegionType.ByteData, 700, 800
 		);
 	}
 
 	@Test
 	public void testOverwriteFullyFromEnd() throws Exception {
-		m_model.addRegion(RegionType.LongDataLE, 600, 900);	// Put it splat in the middle
+		defaultRegions();
+		m_model.addRegion(RegionType.LongData, 600, 900);	// Put it splat in the middle
 		assertRegions(
 			RegionType.StringAsciiWordBE, 100, 200,
 			RegionType.ByteData, 300, 400,
 			RegionType.StringAsciiC, 500, 600,
-			RegionType.LongDataLE, 600, 900
+			RegionType.LongData, 600, 900
 		);
 	}
 

@@ -1,5 +1,6 @@
 package to.etc.dec.idasm.disassembler.model;
 
+import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.disassembler.util.Util;
 
 import java.util.ArrayList;
@@ -11,17 +12,14 @@ final public class RegionModel {
 	 */
 	private List<Region> m_regionList = new ArrayList<>();
 
+	private int m_currentRegionIndex;
+
+	@Nullable
+	private Region m_currentRegion;
+
 	public RegionModel() {
 		//-- Start with a full range region
 		m_regionList.add(new Region(0, Integer.MAX_VALUE, RegionType.Code));
-	}
-
-	public int getRegionCount() {
-		return m_regionList.size();
-	}
-
-	public Region getRegionByIndex(int index) {
-		return m_regionList.get(index);
 	}
 
 	public void addRegion(RegionType type, int start, int end) {
@@ -140,11 +138,10 @@ final public class RegionModel {
 		int lastAddress = 0;
 		int index = 0;
 		while(index < m_regionList.size()) {
-			Region region = m_regionList.get(index);
+			Region region = m_regionList.get(index++);
 			if(region.getStart() > lastAddress) {
 				//-- Insert a code region.
 				index = insertRegionAt(index - 1, RegionType.Code, lastAddress, region.getStart());
-				index++;
 				lastAddress = region.getEnd();
 			}
 		}
@@ -162,10 +159,68 @@ final public class RegionModel {
 	 * Return the index of the Region containing the address.
 	 */
 	public int getRegionIndexByAddress(int address) {
+		//-- We match on start address only.
 		int index = Util.binarySearch(m_regionList, address, a -> a.getStart(), Integer::compareTo);
 		if(index < 0) {
 			index = -(index + 1);
 		}
-		return index - 1;
+
+		/*
+		 * If the address is the actual start address then this will have returned
+		 * the actual region. Check its bounds.
+		 */
+		if(index < m_regionList.size()) {
+			Region r = m_regionList.get(index);
+			if(address >= r.getStart() && address < r.getEnd()) {
+				return index;
+			}
+		}
+
+		/*
+		 * But usually it would find the "next" region, as that one is where
+		 * a new one should be inserted..
+		 */
+		if(index > 0) {
+			index--;
+			Region r = m_regionList.get(index);
+			if(address >= r.getStart() && address < r.getEnd()) {
+				return index;
+			}
+		}
+
+		throw new IllegalStateException("Region not correct at index " + index);
 	}
+
+	public int getRegionCount() {
+		return m_regionList.size();
+	}
+
+	public Region getRegionByIndex(int index) {
+		return m_regionList.get(index);
+	}
+
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Walking regions												*/
+	/*----------------------------------------------------------------------*/
+
+	public Region updateAddress(int address) {
+		Region currentRegion = m_currentRegion;
+		if(currentRegion != null) {
+			if(address < currentRegion.getEnd() && address >= currentRegion.getStart()) {
+				return currentRegion;
+			}
+			m_currentRegion = null;
+		}
+
+		if(m_currentRegion == null) {
+			m_currentRegionIndex = getRegionIndexByAddress(address);
+			m_currentRegion = getRegionByIndex(m_currentRegionIndex);
+		}
+		if(m_currentRegion == null) {
+			throw new IllegalStateException("Region not found");
+		}
+		return m_currentRegion;
+	}
+
 }

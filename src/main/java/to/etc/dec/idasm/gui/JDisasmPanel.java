@@ -1,7 +1,6 @@
 package to.etc.dec.idasm.gui;
 
 import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
@@ -139,10 +138,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 					g.fillRect(0, m_yPos, getSize().width, selEndY - m_yPos);
 					g.setColor(Color.BLACK);
 				}
-
-				m_context.start();
-				m_disassembler.disassemble(m_context);
-
+				m_context.disassembleLine(m_disassembler, a -> {});
 				int height = renderLine(g, m_context, m_yPos, false);
 				m_yPos += height;
 				index++;
@@ -242,7 +238,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				+ m_spacing + m_bytesSize
 				+ m_spacing + m_charsSize;
 
-			DisassemblerMain.disassemble(ctx, m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
+			ctx.disassembleBlock(m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
 				addLine(a.getStartAddress(), m_yPos);
 				int height = renderLine(g, a, m_yPos, true);
 				m_yPos += height;

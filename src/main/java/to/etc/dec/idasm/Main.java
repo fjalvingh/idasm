@@ -6,7 +6,6 @@ import org.kohsuke.args4j.Option;
 import to.etc.dec.idasm.cmdline.AttributedLine;
 import to.etc.dec.idasm.cmdline.Renderer;
 import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.DisassemblerMain;
 import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
@@ -47,7 +46,8 @@ public class Main {
 			runGUI(data, infoModel);
 		} else {
 			PdpDisassembler das = new PdpDisassembler();
-			DisassemblerMain.disassemble(das, data, infoModel, 036352, data.getEndAddress(), disContext -> display(disContext));
+			DisContext ctx = new DisContext(data, infoModel);
+			ctx.disassembleBlock(das, 036352, data.getEndAddress(), disContext -> display(disContext));
 		}
 	}
 
