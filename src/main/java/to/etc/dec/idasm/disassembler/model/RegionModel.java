@@ -122,7 +122,7 @@ final public class RegionModel {
 			Region a = m_regionList.get(index + 1);			// Get region after
 			if(end == a.getStart() && a.getType() == type) {
 				//-- We can merge the next one in here
-				r.update(type, a.getStart(), end);
+				r.update(type, r.getStart(), a.getEnd());
 				m_regionList.remove(index + 1);
 			}
 		}
