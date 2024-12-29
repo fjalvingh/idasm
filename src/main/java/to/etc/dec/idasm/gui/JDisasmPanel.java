@@ -98,6 +98,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return new Dimension(1024, m_panelHeight);
 	}
 
+	static private final boolean PAINTDBG = false;
+
 	@Override public void paintComponent(Graphics g) {
 		super.paintComponent(g);
 		try {
@@ -108,12 +110,14 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			g2d.setFont(m_font);
 
 			int fromY = g.getClipBounds().y;
-			//System.out.println(
-			//	"repaint: "
-			//		+ g.getClipBounds().width
-			//		+ " x " + g.getClipBounds().height
-			//		+ " @ " + g.getClipBounds().x + ", " + g.getClipBounds().y
-			//);
+			if(PAINTDBG) {
+				System.out.println(
+					"repaint: "
+						+ g.getClipBounds().width
+						+ " x " + g.getClipBounds().height
+						+ " @ " + g.getClipBounds().x + ", " + g.getClipBounds().y
+				);
+			}
 
 			//-- Calculate the closest Y line
 			int index = Arrays.binarySearch(m_posMap, 0, m_lineCount, fromY);
@@ -126,10 +130,12 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			int endY = fromY + g.getClipBounds().height;
 			int addr = m_lineAddresses[index];
 
-			//System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
+			if(PAINTDBG)
+				System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
 			m_context.setCurrentAddress(addr);
 			while(m_yPos < endY) {
-				//System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
+				if(PAINTDBG)
+					System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
 
 				if(inSelection(m_context)) {
 					//-- Render a background rectangle with the selection color.
@@ -249,6 +255,30 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 	}
 
+	private void redoFrom(int address) throws Exception {
+		//-- We need to fully re-render from here.
+		int index = calculateIndexByAddr(address);
+		if(m_lineAddresses[index] != address) {
+			throw new IllegalStateException("Bad index");
+		}
+
+		//-- Recalculate all lines
+		m_context.setCurrentAddress(address);
+		int yPos = m_posMap[index];
+		m_lineCount = index + 1;
+		Graphics g = getGraphics();
+		while(m_context.getCurrentAddress() < m_source.getEndAddress()) {
+			m_context.disassembleLine(m_disassembler, a -> {});
+			int height = renderLine(g, m_context, yPos, true);
+			yPos += height;
+			addLine(m_context.getCurrentAddress(), yPos);
+		}
+		m_panelHeight = yPos;
+
+		//-- Now: rerender
+		repaint(0L, 0, m_posMap[index], getSize().width, yPos);
+	}
+
 	/**
 	 * Calculate the index in the line arrays for the specified Y position.
 	 */
@@ -269,6 +299,9 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		int index = Arrays.binarySearch(m_lineAddresses, 0, m_lineCount, address);
 		if(index < 0) {
 			index = -(index + 1);
+		}
+		if(m_lineAddresses[index] == address) {
+			return index;
 		}
 		return index - 1;                        // As y is always >= the location found the index is always AFTER that location, we need it AT the location
 	}
@@ -301,7 +334,6 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_lineCount++;
 	}
 
-
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Scrollable interface										*/
 	/*----------------------------------------------------------------------*/
@@ -331,8 +363,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/*----------------------------------------------------------------------*/
 	private final MouseListener m_mouseListener = new MouseAdapter() {
 		@Override public void mouseClicked(MouseEvent e) {
-			//Point rp = JDisasmPanel.this.getMousePosition();
-			System.out.println("mouseClicked " + e.getX() + "," + e.getY());
+			//System.out.println("mouseClicked " + e.getX() + "," + e.getY());
 		}
 
 		@Override public void mousePressed(MouseEvent e) {
@@ -451,13 +482,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_infoModel.addRegion(value, cs, ce);
 		m_infoModel.save();
 
+		m_selectionStart = 0;
+		m_selectionEnd = 0;
 		redoFrom(cs);
 	}
-
-	private void redoFrom(int cs) {
-
-
-	}
-
-
 }
