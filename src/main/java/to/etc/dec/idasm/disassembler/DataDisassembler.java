@@ -91,7 +91,6 @@ final public class DataDisassembler implements IDataDisassembler {
 
 	private void decodeBytes(DisContext ctx, Region region, DataType dataType) {
 		int addr = ctx.getCurrentAddress();
-		int maxlen = region.getEnd() - ctx.getCurrentAddress();
 
 		//-- Do we have a span of the same values of the data type?
 		long val = ctx.getValueAt(addr, dataType);
@@ -107,14 +106,16 @@ final public class DataDisassembler implements IDataDisassembler {
 			return;
 		}
 
-		int maxitems = 8 / dataType.getLen();
-		if(maxlen > maxitems) {
-			maxlen = maxitems;
+		int itemLimit = 8 / dataType.getLen();
+		int maxBytes = region.getEnd() - ctx.getCurrentAddress();
+		int itemsAvail = maxBytes / dataType.getLen();
+		if(itemsAvail > itemLimit) {
+			itemsAvail = itemLimit;
 		}
 
 		//-- Just dump bytes
 		StringBuilder sb = new StringBuilder();
-		while(maxlen-- > 0) {
+		while(itemsAvail-- > 0) {
 			val = ctx.getValueAt(addr, dataType);
 			if(sb.length() > 0) {
 				sb.append(',');
