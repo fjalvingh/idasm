@@ -6,6 +6,11 @@ public enum RegionType {
 	ByteData,
 	WordData,
 	LongData,
+
+	PcRelativeByte,
+	PcRelativeWord,
+	PcRelativeLong,
+
 	StringAsciiC,
 	StringAsciiByte,
 	StringAsciiWordLE,

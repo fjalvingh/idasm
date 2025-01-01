@@ -179,14 +179,17 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			g.setColor(Color.BLUE);
 			int x = m_labelStartX;
 			for(Label label : labels) {
+				int drawX = x;
 				String s = label.getName() + ": ";
 				int width = m_fontMetrics.stringWidth(s);
 				if(x + width > getSize().width) {
 					x = m_labelStartX;
 					y += m_fontHeight;
+				} else {
+					x += width;
 				}
 				if(!calculateHeightOnly)
-					g.drawString(s, x, y);
+					g.drawString(s, drawX, y);
 			}
 			y += m_fontHeight;
 		}

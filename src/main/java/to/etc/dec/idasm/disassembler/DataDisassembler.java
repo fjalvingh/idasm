@@ -24,11 +24,47 @@ final public class DataDisassembler implements IDataDisassembler {
 				decodeBytes(ctx, region, DataType.Long);
 				return;
 
+			case PcRelativeByte:
+				decodePcRelative(ctx, region, DataType.SignedByte);
+				return;
+
+			case PcRelativeWord:
+				decodePcRelative(ctx, region, DataType.SignedWord);
+				return;
+
+			case PcRelativeLong:
+				decodePcRelative(ctx, region, DataType.SignedLong);
+				return;
+
 			case StringAsciiC:
 				//-- Strings terminated with a null byte
 				decodeCStrings(ctx, region);
+				return;
 
 		}
+	}
+
+	/**
+	 * Create a set of offsets with labels, starting from PC (start of region).
+	 */
+	private void decodePcRelative(DisContext ctx, Region region, DataType dataType) {
+		if(ctx.getCurrentAddress() >= region.getEnd()) {
+			throw new IllegalStateException("Region already passed");
+		}
+
+		//-- If we're at the start of the table: add a table label
+		String lbls = "tbl" + ctx.valueInBase(ctx.getCurrentAddress());
+		if(ctx.getCurrentAddress() == region.getStart()) {
+			ctx.addLabel(ctx.getCurrentAddress(), lbls, AddrTarget.Code);
+		}
+
+		long offset = ctx.getValueAt(ctx.getCurrentAddress(), dataType, true);
+		long address = region.getStart() + offset;
+		Label label = ctx.addAutoLabel((int) address, AddrTarget.Code);
+
+		ctx.mnemonic("dd." + dataType.getSuffix());
+		ctx.appendOperand(label.getName() + " - " + lbls);
+		ctx.setCurrentAddress(ctx.getCurrentAddress() + dataType.getLen());
 	}
 
 	private void decodeCStrings(DisContext ctx, Region region) {
@@ -116,7 +152,8 @@ final public class DataDisassembler implements IDataDisassembler {
 		//-- Just dump bytes
 		StringBuilder sb = new StringBuilder();
 		while(itemsAvail-- > 0) {
-			val = ctx.getValueAt(addr, dataType);
+			//-- Add byte to operand
+			val = ctx.getValueAt(addr, dataType, true);
 			if(sb.length() > 0) {
 				sb.append(',');
 			}
