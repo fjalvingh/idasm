@@ -9,6 +9,8 @@ import to.etc.dec.idasm.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.Label;
 import to.etc.dec.idasm.disassembler.NumericBase;
 
+import java.util.List;
+
 public class PdpDisassembler implements IDisassembler {
 	@Override public void configureDefaults(DisContext context) throws Exception {
 		context.setBase(NumericBase.Oct);
@@ -425,22 +427,35 @@ public class PdpDisassembler implements IDisassembler {
 						Label label = ctx.addAutoLabel(imm, target);
 						return label.getName();
 					}
+					List<Label> labels = ctx.getLabels(imm);
+					if(labels != null) {
+						return "#" + labels.get(0).getName();
+					}
+
 					return "#" + ctx.valueInBase(imm);
 
 				case 3:
 					int abs = ctx.getWordLE();
-					Label label = ctx.addAutoLabel(abs, target);
-					return "@#" + label.getName();
+					if(target == AddrTarget.Code) {
+						Label label = ctx.addAutoLabel(abs, target);
+						return label.getName();
+					}
+
+					labels = ctx.getLabels(abs);
+					if(labels != null) {
+						return "@#" + labels.get(0).getName();
+					}
+					return "@#" + ctx.valueInBase(abs);
 
 				case 6:
 					int relpc = ctx.getWordLE();
-					ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
-					return ctx.valueInBase(relpc) + "(pc)";
+					Label label = ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
+					return label.getName() + "(pc)";
 
 				case 7:
 					relpc = ctx.getWordLE();
-					ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
-					return "@" + ctx.valueInBase(relpc) + "(pc)";
+					label = ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
+					return "@" + label.getName() + "(pc)";
 			}
 		}
 		switch(m){
@@ -466,11 +481,13 @@ public class PdpDisassembler implements IDisassembler {
 
 			case 6:
 				int index = ctx.getWordLE();
-				return ctx.valueInBase(index) + "(" + reg(r) + ")";
+				Label label = ctx.addAutoLabel(index, target);
+				return label.getName() + "(" + reg(r) + ")";
 
 			case 7:
 				index = ctx.getWordLE();
-				return "@" + ctx.valueInBase(index) + "(" + reg(index) + ")";
+				label = ctx.addAutoLabel(index, target);
+				return "@" + label.getName() + "(" + reg(index) + ")";
 		}
 	}
 
