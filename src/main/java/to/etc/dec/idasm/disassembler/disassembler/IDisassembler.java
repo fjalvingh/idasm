@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 import org.eclipse.jdt.annotation.NonNull;
 

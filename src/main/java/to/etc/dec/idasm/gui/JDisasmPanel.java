@@ -1,11 +1,11 @@
 package to.etc.dec.idasm.gui;
 
-import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.IDisassembler;
-import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
+import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
-import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import javax.swing.*;
 import java.awt.*;

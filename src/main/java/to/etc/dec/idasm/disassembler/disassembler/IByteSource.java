@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler.pdp11;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 public interface IByteSource {
 	int getByte(int address);

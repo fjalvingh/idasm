@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 final public class Label {
 	private final long m_address;

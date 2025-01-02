@@ -5,11 +5,11 @@ import org.kohsuke.args4j.CmdLineParser;
 import org.kohsuke.args4j.Option;
 import to.etc.dec.idasm.cmdline.AttributedLine;
 import to.etc.dec.idasm.cmdline.Renderer;
-import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.Label;
+import to.etc.dec.idasm.disassembler.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
+import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
-import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 import to.etc.dec.idasm.gui.MainWindow;
 

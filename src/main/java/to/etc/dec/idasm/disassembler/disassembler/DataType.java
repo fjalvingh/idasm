@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 public enum DataType {
 	Byte(1, false, "b"),

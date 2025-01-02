@@ -1,5 +1,7 @@
 package to.etc.dec.idasm.disassembler.pdp11;
 
+import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
+
 import java.io.File;
 import java.io.FileInputStream;
 

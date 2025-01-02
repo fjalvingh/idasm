@@ -1,13 +1,13 @@
 package to.etc.dec.idasm.disassembler.pdp11;
 
 import org.eclipse.jdt.annotation.NonNull;
-import to.etc.dec.idasm.disassembler.AddrTarget;
-import to.etc.dec.idasm.disassembler.DataDisassembler;
-import to.etc.dec.idasm.disassembler.DisContext;
-import to.etc.dec.idasm.disassembler.IDataDisassembler;
-import to.etc.dec.idasm.disassembler.IDisassembler;
-import to.etc.dec.idasm.disassembler.Label;
-import to.etc.dec.idasm.disassembler.NumericBase;
+import to.etc.dec.idasm.disassembler.disassembler.AddrTarget;
+import to.etc.dec.idasm.disassembler.disassembler.DataDisassembler;
+import to.etc.dec.idasm.disassembler.disassembler.DisContext;
+import to.etc.dec.idasm.disassembler.disassembler.IDataDisassembler;
+import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
+import to.etc.dec.idasm.disassembler.disassembler.Label;
+import to.etc.dec.idasm.disassembler.disassembler.NumericBase;
 
 import java.util.List;
 

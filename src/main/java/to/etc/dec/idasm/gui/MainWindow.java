@@ -1,7 +1,7 @@
 package to.etc.dec.idasm.gui;
 
+import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
-import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 
 import javax.swing.*;
@@ -24,7 +24,7 @@ final public class MainWindow extends JFrame {
 
 		if(false) {
 			JTable table = new JTable();
-			m_model = new DisassemblyModel(source);
+			m_model = new DisassemblyModel(source, infoModel);
 			m_model.initialize();
 
 			table.setModel(m_model.getTableModel());

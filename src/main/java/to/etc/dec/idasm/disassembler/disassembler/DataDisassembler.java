@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 import to.etc.dec.idasm.disassembler.model.Region;
 

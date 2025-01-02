@@ -1,4 +1,4 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 public enum NumericBase {
 	Dec(10, 0, 3, 5, 7, 9),

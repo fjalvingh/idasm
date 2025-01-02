@@ -1,11 +1,10 @@
-package to.etc.dec.idasm.disassembler;
+package to.etc.dec.idasm.disassembler.disassembler;
 
 import to.etc.dec.idasm.deidioting.ConsumerEx;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.Region;
 import to.etc.dec.idasm.disassembler.model.RegionModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
-import to.etc.dec.idasm.disassembler.pdp11.IByteSource;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -87,7 +86,7 @@ public class DisContext {
 		if(r.getType() == RegionType.Code) {
 			das.disassemble(this);
 		} else {
-			System.out.println("data @" + Integer.toOctalString(getStartAddress()));
+			//System.out.println("data @" + Integer.toOctalString(getStartAddress()));
 			das.getDataDisassembler().disassemble(this, r);
 		}
 		listener.accept(this);
