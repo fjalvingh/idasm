@@ -121,7 +121,9 @@ public class DisassemblyModel {
 	public void initialize() throws Exception {
 		DisContext ctx = m_context = new DisContext(m_source, m_infoModel);
 
-		ctx.disassembleBlock(m_disassembler, 036352, m_source.getEndAddress(), a -> {
+		int startAddress = 036352;
+		ctx.predisassembleBlock(m_disassembler, startAddress, m_source.getEndAddress());
+		ctx.disassembleAndRenderBlock(m_disassembler, startAddress, m_source.getEndAddress(), a -> {
 			addLine(a.getStartAddress());
 		});
 		m_lastDisassembledLine = -1;

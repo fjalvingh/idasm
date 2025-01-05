@@ -8,6 +8,7 @@ import to.etc.dec.idasm.cmdline.Renderer;
 import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.disassembler.Label;
+import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
@@ -47,7 +48,9 @@ public class Main {
 		} else {
 			PdpDisassembler das = new PdpDisassembler();
 			DisContext ctx = new DisContext(data, infoModel);
-			ctx.disassembleBlock(das, 036352, data.getEndAddress(), disContext -> display(disContext));
+			int startAddress = 036352;
+			ctx.predisassembleBlock(das, startAddress, data.getEndAddress());
+			ctx.disassembleAndRenderBlock(das, startAddress, data.getEndAddress(), disContext -> display(disContext));
 		}
 	}
 
@@ -113,9 +116,14 @@ public class Main {
 		appendCharacters(ctx);
 		m_line.tabTo(TAB_MNEMONIC);
 
-		m_line.append(ctx.getOpcodeString(), Renderer.F_MNEMONIC);
+		for(DisplayItem displayItem : ctx.getMnemonic()) {
+			m_line.append(displayItem.getText(), Renderer.F_MNEMONIC);
+		}
+
 		m_line.tabTo(TAB_OPERAND);
-		m_line.append(ctx.getOperandString(), Renderer.F_OPERAND);
+		for(DisplayItem operand : ctx.getOperands()) {
+			m_line.append(operand.getText(), Renderer.F_OPERAND);
+		}
 		//, TAB_COMMENT);
 		renderLine();
 	}

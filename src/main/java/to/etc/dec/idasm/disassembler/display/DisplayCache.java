@@ -13,8 +13,10 @@ final public class DisplayCache {
 	private final List<DisplayItem> m_usedItems = new ArrayList<>();
 
 	public DisplayLine newLine() {
+		if(m_usedLines.size() > 1000)
+			throw new IllegalStateException("Lines are not being released");
 		if(!m_availableLines.isEmpty()) {
-			DisplayLine line = m_availableLines.get(m_availableLines.size() - 1);
+			DisplayLine line = m_availableLines.remove(m_availableLines.size() - 1);
 			m_usedLines.add(line);
 			return line;
 		}
@@ -33,7 +35,7 @@ final public class DisplayCache {
 
 	DisplayItem newItem() {
 		if(!m_availableItems.isEmpty()) {
-			DisplayItem item = m_availableItems.get(m_availableItems.size() - 1);
+			DisplayItem item = m_availableItems.remove(m_availableItems.size() - 1);
 			m_usedItems.add(item);
 			return item;
 		}

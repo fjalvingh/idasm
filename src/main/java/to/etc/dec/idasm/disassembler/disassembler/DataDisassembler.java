@@ -40,7 +40,6 @@ final public class DataDisassembler implements IDataDisassembler {
 				//-- Strings terminated with a null byte
 				decodeCStrings(ctx, region);
 				return;
-
 		}
 	}
 
@@ -53,17 +52,17 @@ final public class DataDisassembler implements IDataDisassembler {
 		}
 
 		//-- If we're at the start of the table: add a table label
-		String lbls = "tbl" + ctx.valueInBase(ctx.getCurrentAddress());
-		if(ctx.getCurrentAddress() == region.getStart()) {
-			ctx.addLabel(ctx.getCurrentAddress(), lbls, AddrTarget.Code);
-		}
+		String lbls = "tbl" + ctx.valueInBase(region.getStart());
+		Label regionStartLabel = ctx.addLabel(region.getStart(), lbls, AddrTarget.Code);
 
 		long offset = ctx.getValueAt(ctx.getCurrentAddress(), dataType, true);
 		long address = region.getStart() + offset;
 		Label label = ctx.addAutoLabel((int) address, AddrTarget.Code);
 
 		ctx.mnemonic("dd." + dataType.getSuffix());
-		ctx.appendOperand(label.getName() + " - " + lbls);
+		ctx.operandLabel(label);
+		ctx.operandPunctuation(" - ");
+		ctx.operandLabel(regionStartLabel);
 		ctx.setCurrentAddress(ctx.getCurrentAddress() + dataType.getLen());
 	}
 
@@ -80,7 +79,7 @@ final public class DataDisassembler implements IDataDisassembler {
 					sb.append("\"");
 				}
 				sb.append(",0");
-				ctx.appendOperand(sb.toString());
+				ctx.operandPunctuation(sb.toString());
 				ctx.setCurrentAddress(addr);
 				return;
 			}
@@ -117,7 +116,7 @@ final public class DataDisassembler implements IDataDisassembler {
 		if(instr) {
 			sb.append("\"");
 		}
-		ctx.appendOperand(sb.toString());
+		ctx.operandPunctuation(sb.toString());
 		ctx.setCurrentAddress(addr);
 	}
 
@@ -150,18 +149,16 @@ final public class DataDisassembler implements IDataDisassembler {
 		}
 
 		//-- Just dump bytes
-		StringBuilder sb = new StringBuilder();
+		ctx.mnemonic("dd." + dataType.getSuffix());
+		int itemCount = 0;
 		while(itemsAvail-- > 0) {
 			//-- Add byte to operand
 			val = ctx.getValueAt(addr, dataType, true);
-			if(sb.length() > 0) {
-				sb.append(',');
-			}
-			sb.append(ctx.valueInBase(val));
+			if(itemCount++ > 0)
+				ctx.operandPunctuation(",");
+			ctx.operandNumber(ctx.valueInBase(val));
 			addr += dataType.getLen();
 		}
-		ctx.mnemonic("dd." + dataType.getSuffix());
-		ctx.appendOperandPart(sb.toString());
 		ctx.setCurrentAddress(addr);
 	}
 }

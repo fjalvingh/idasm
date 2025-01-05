@@ -29,7 +29,7 @@ public class PdpDisassembler implements IDisassembler {
 	}
 
 	@Override public int getMaxInstructionSizeInChars(NumericBase base) {
-		switch(base) {
+		switch(base){
 			default:
 				throw new IllegalStateException(base + "??");
 
@@ -42,6 +42,8 @@ public class PdpDisassembler implements IDisassembler {
 	}
 
 	@Override public void disassemble(DisContext ctx) throws Exception {
+		if(ctx.getCurrentAddress() == 036366)
+			System.out.println();
 		int inst = ctx.getWordLE();
 
 		boolean byteMode = (inst & 0100000) != 0;
@@ -86,57 +88,55 @@ public class PdpDisassembler implements IDisassembler {
 
 				case 0170000:
 					ctx.mnemonic("mul");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
-					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
+					decodeAddressing(ctx, inst, AddrTarget.Data);
 					return;
 
 				case 0171000:
 					ctx.mnemonic("div");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
-					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
+					decodeAddressing(ctx, inst, AddrTarget.Data);
 					return;
 
 				case 0172000:
 					ctx.mnemonic("ash");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
-					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
+					decodeAddressing(ctx, inst, AddrTarget.Data);
 					return;
 
 				case 0173000:
 					ctx.mnemonic("ashc");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
-					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
+					decodeAddressing(ctx, inst, AddrTarget.Data);
 					return;
 
 				case 0174000:
 					ctx.mnemonic("xor");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
-					ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Data));
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
+					decodeAddressing(ctx, inst, AddrTarget.Data);
 					return;
 
 				case 0077000:
 					ctx.mnemonic("sob");
-					ctx.appendOperandPart(reg(inst >> 6));
-					ctx.appendOperandPart(",");
+					ctx.operandRegister(reg(inst >> 6));
+					ctx.operandPunctuation(",");
 					int off = inst & 0x3f;
 					if((off & 0x20) != 0)
 						off |= 0xffffffc0;
 					off = ctx.getCurrentAddress() + 2 * off;
 					Label label = ctx.addAutoLabel(off, AddrTarget.Code);
-					ctx.appendOperandPart(label.getName());
+					ctx.operandLabel(label);
 					return;
 			}
 
-			String source = decodeAddressing(ctx, (inst >> 6) & 077, AddrTarget.Data);
-			String dest = decodeAddressing(ctx, inst & 077, AddrTarget.Data);
-			ctx.appendOperandPart(source);
-			ctx.appendOperandPart(",");
-			ctx.appendOperandPart(dest);
+			decodeAddressing(ctx, (inst >> 6) & 077, AddrTarget.Data);
+			ctx.operandPunctuation(",");
+			decodeAddressing(ctx, inst & 077, AddrTarget.Data);
 			return;
 		}
 
@@ -238,8 +238,8 @@ public class PdpDisassembler implements IDisassembler {
 				ctx.mnemonic("mfps");
 				break;
 		}
-		if(!ctx.getOpcodeString().isEmpty()) {
-			ctx.appendOperandPart(decodeAddressing(ctx, inst, target));
+		if(ctx.hasMnemonic()) {
+			decodeAddressing(ctx, inst, target);
 			return;
 		}
 
@@ -307,7 +307,7 @@ public class PdpDisassembler implements IDisassembler {
 				break;
 		}
 
-		if(!ctx.getOpcodeString().isEmpty()) {
+		if(ctx.hasMnemonic()) {
 			int offset = inst & 0xff;
 			if((offset & 0x80) != 0) {
 				//-- -ve
@@ -315,38 +315,38 @@ public class PdpDisassembler implements IDisassembler {
 			}
 			int addr = ctx.getCurrentAddress() + offset * 2;
 			Label label = ctx.addAutoLabel(addr, AddrTarget.Code);
-			ctx.appendOperandPart(label.getName());
+			ctx.operandLabel(label);
 			return;
 		}
 
 		if((inst >> 9) == 004) {            // jsr
 			ctx.mnemonic("jsr");
-			ctx.appendOperandPart(reg(inst >> 6));
-			ctx.appendOperandPart(",");
-			ctx.appendOperandPart(decodeAddressing(ctx, inst, AddrTarget.Code));
+			ctx.operandRegister(reg(inst >> 6));
+			ctx.operandPunctuation(",");
+			decodeAddressing(ctx, inst, AddrTarget.Code);
 			return;
 		}
 
 		if((inst >> 3) == 020) {
 			ctx.mnemonic("rts");
-			ctx.appendOperandPart(reg(inst));
+			ctx.operandRegister(reg(inst));
 			return;
 		}
 
 		if((inst >> 6) == 0064) {
 			ctx.mnemonic("mark");
-			ctx.appendOperandPart(ctx.valueInBase(inst & 0x3f));
+			ctx.operandNumber(ctx.valueInBase(inst & 0x3f));
 			return;
 		}
 
 		if((inst >> 8) == 0210) {
 			ctx.mnemonic("emt");
-			ctx.appendOperandPart(ctx.valueInBase(inst & 0xff));
+			ctx.operandNumber(ctx.valueInBase(inst & 0xff));
 			return;
 		}
 		if((inst >> 8) == 0211) {
 			ctx.mnemonic("trap");
-			ctx.appendOperandPart(ctx.valueInBase(inst & 0xff));
+			ctx.operandNumber(ctx.valueInBase(inst & 0xff));
 			return;
 		}
 
@@ -359,13 +359,13 @@ public class PdpDisassembler implements IDisassembler {
 		if((inst >> 4) == 012) {
 			//Cnn
 			ctx.mnemonic("Ccc");
-			ctx.appendOperandPart(decodeFlags(inst));
+			ctx.operandPunctuation(decodeFlags(inst));
 			return;
 		}
 		if((inst >> 4) == 013) {
 			//Cnn
 			ctx.mnemonic("Scc");
-			ctx.appendOperandPart(decodeFlags(inst));
+			ctx.operandPunctuation(decodeFlags(inst));
 			return;
 		}
 
@@ -414,7 +414,99 @@ public class PdpDisassembler implements IDisassembler {
 		return sb.toString();
 	}
 
-	private String decodeAddressing(DisContext ctx, int pat, AddrTarget target) {
+	private void decodeAddressing(DisContext ctx, int pat, AddrTarget target) {
+		int m = (pat >> 3) & 07;
+		int r = (pat & 07);
+
+		if(r == 7) {
+			switch(m){
+				case 2:
+					int imm = ctx.getWordLE();
+					if(target == AddrTarget.Code) {
+						//-- jump target
+						Label label = ctx.addAutoLabel(imm, target);
+						ctx.operandLabel(label);
+						return;
+					}
+					List<Label> labels = ctx.getLabels(imm);
+					if(labels != null) {
+						ctx.operandPunctuation("#").operandLabel(labels.get(0));
+						return;
+					}
+					ctx.operandPunctuation("#").operandNumber(ctx.valueInBase(imm));
+					return;
+
+				case 3:
+					int abs = ctx.getWordLE();
+					if(target == AddrTarget.Code) {
+						Label label = ctx.addAutoLabel(abs, target);
+						ctx.operandLabel(label);
+						return;
+					}
+
+					labels = ctx.getLabels(abs);
+					if(labels != null) {
+						ctx.operandPunctuation("@#").operandLabel(labels.get(0));
+						return;
+					}
+					ctx.operandPunctuation("@#").operandNumber(ctx.valueInBase(abs));
+					return;
+
+				case 6:
+					int relpc = ctx.getWordLE();
+					Label label = ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
+					ctx.operandLabel(label).operandPunctuation("(").operandRegister("pc").operandPunctuation(")");
+					return;
+
+				case 7:
+					relpc = ctx.getWordLE();
+					label = ctx.addAutoLabel(relpc * 2 + ctx.getCurrentAddress(), target);
+					ctx.operandPunctuation("@").operandLabel(label).operandPunctuation("(").operandRegister("pc").operandPunctuation(")");
+					return;
+			}
+		}
+		switch(m){
+			default:
+				throw new IllegalStateException("? mode=" + m);
+			case 0:
+				ctx.operandRegister(reg(r));
+				return;
+
+			case 1:
+				ctx.operandPunctuation("(").operandRegister(reg(r)).operandPunctuation(")");
+				return;
+
+			case 2:
+				ctx.operandPunctuation("(").operandRegister(reg(r)).operandPunctuation(")+");
+				return;
+
+			case 3:
+				ctx.operandPunctuation("@(").operandRegister(reg(r)).operandPunctuation(")+");
+				return;
+
+			case 4:
+				ctx.operandPunctuation("-(").operandRegister(reg(r)).operandPunctuation(")");
+				return;
+
+			case 5:
+				ctx.operandPunctuation("@-(").operandRegister(reg(r)).operandPunctuation(")");
+				return;
+
+			case 6:
+				int index = ctx.getWordLE();
+				Label label = ctx.addAutoLabel(index, target);
+				ctx.operandLabel(label).operandPunctuation("(").operandRegister(reg(r)).operandPunctuation(")");
+				return;
+
+			case 7:
+				index = ctx.getWordLE();
+				label = ctx.addAutoLabel(index, target);
+				ctx.operandPunctuation("@").operandLabel(label).operandPunctuation("(").operandRegister(reg(index)).operandPunctuation(")");
+				return;
+		}
+	}
+
+	private String old(DisContext ctx, int pat, AddrTarget target) {
 		int m = (pat >> 3) & 07;
 		int r = (pat & 07);
 
@@ -490,6 +582,7 @@ public class PdpDisassembler implements IDisassembler {
 				return "@" + label.getName() + "(" + reg(index) + ")";
 		}
 	}
+
 
 	private String reg(int regno) {
 		regno &= 07;

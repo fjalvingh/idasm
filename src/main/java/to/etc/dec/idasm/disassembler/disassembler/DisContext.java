@@ -1,6 +1,11 @@
 package to.etc.dec.idasm.disassembler.disassembler;
 
+import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.deidioting.ConsumerEx;
+import to.etc.dec.idasm.disassembler.display.DisplayCache;
+import to.etc.dec.idasm.disassembler.display.DisplayItem;
+import to.etc.dec.idasm.disassembler.display.DisplayLine;
+import to.etc.dec.idasm.disassembler.display.ItemType;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.Region;
 import to.etc.dec.idasm.disassembler.model.RegionModel;
@@ -10,6 +15,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.stream.Collectors;
 
 /**
@@ -19,6 +25,12 @@ public class DisContext {
 	private final IByteSource m_byteSource;
 
 	private final InfoModel m_infoModel;
+
+	private final DisplayCache m_cache = new DisplayCache();
+
+	private boolean m_hasMnemonic;
+
+	private boolean m_hasOperand;
 
 	enum Endianness {
 		Little,
@@ -40,17 +52,28 @@ public class DisContext {
 
 	private String m_addressString;
 
-	private String m_opcodeString;
+	private List<DisplayItem> m_mnemonic = new ArrayList<>();
 
-	private StringBuilder m_operandString = new StringBuilder();
+	private List<DisplayItem> m_operands = new ArrayList<>();
 
 	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
+
+	/**
+	 * The line we're rendering into, or null if we do not want to render (for label calculating passes).
+	 */
+	@Nullable
+	private DisplayLine m_line;
+
+	/**
+	 * True when we actually need to do rendering, i.e. adding line items
+	 * so that they can be displayed.
+	 */
+	private boolean m_render;
 
 	public DisContext(IByteSource data, InfoModel infoModel) {
 		m_byteSource = data;
 		m_infoModel = infoModel;
 	}
-
 
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Disassembly methods.										*/
@@ -60,20 +83,41 @@ public class DisContext {
 		m_startAddress = m_currentAddress;
 		m_instBytes.setLength(0);
 		m_addressString = getBaseValue(m_startAddress, m_byteSource.getEndAddress() <= 65536 ? 2 : 4);
-		m_operandString.setLength(0);
-		m_opcodeString = "";
+		m_mnemonic.clear();
+		m_operands.clear();
+		m_hasMnemonic = false;
+		m_hasOperand = false;
+
+		//-- Initialize the Line if rendering
+		DisplayLine line = m_line;
+		if(m_render) {
+			if(line == null) {
+				line = m_line = m_cache.newLine();
+			}
+			line.prepare(m_currentAddress);
+		} else {
+			if(line != null) {
+				m_line = null;
+				line.free();
+			}
+		}
 	}
 
-	public void disassembleBlock(IDisassembler das, int from, int to, ConsumerEx<DisContext> listener) throws Exception {
-		//-- Pass 1: detect labels
+	/**
+	 * Does a non-rendering pass over the block, to calculate labels and offsets.
+	 */
+	public void predisassembleBlock(IDisassembler das, int from, int to) throws Exception {
 		setCurrentAddress(from);
-
+		setRender(false);
 		while(getCurrentAddress() < to) {
 			disassembleLine(das, ctx -> {
 			});
 		}
+	}
 
+	public void disassembleAndRenderBlock(IDisassembler das, int from, int to, ConsumerEx<DisContext> listener) throws Exception {
 		//-- Pass 2: output
+		setRender(true);
 		setCurrentAddress(from);
 		while(getCurrentAddress() < to) {
 			disassembleLine(das, listener);
@@ -210,6 +254,25 @@ public class DisContext {
 		return val;
 	}
 
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Rendering settings											*/
+	/*----------------------------------------------------------------------*/
+	public void setRender(boolean render) {
+		m_render = render;
+		if(!render) {
+			DisplayLine line = m_line;
+			if(null != line) {
+				m_line = null;
+				line.free();
+			}
+		}
+	}
+
+	private DisplayLine line() {
+		return Objects.requireNonNull(m_line);
+	}
+
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Writing decoded data to the output buffers					*/
 	/*----------------------------------------------------------------------*/
@@ -217,9 +280,9 @@ public class DisContext {
 	public void appendDss(DataType size, int count, long value) {
 		mnemonic("ds." + size.getSuffix());
 
-		appendOperandPart(valueInBase((int) value));                // FIXME 32bit?
-		appendOperandPart(",");
-		appendOperandPart(valueInBase(count));
+		operandNumber(valueInBase((int) value));                // FIXME 32bit?
+		operandPunctuation(",");
+		operandNumber(valueInBase(count));
 		m_instBytes.append(valueInBase((int) value)).append(" * ").append(valueInBase(count));
 	}
 
@@ -269,7 +332,7 @@ public class DisContext {
 	}
 
 	public String valueInBase(long value) {
-		switch(m_base) {
+		switch(m_base){
 			default:
 				throw new IllegalStateException("Unsupported base: " + m_base);
 
@@ -300,27 +363,48 @@ public class DisContext {
 
 
 	public void mnemonic(String mov) {
-		m_opcodeString = mov;
+		m_hasMnemonic = true;
+		if(m_render) {
+			m_mnemonic.add(line().newItem(ItemType.Mnemonic, mov));
+		}
 	}
 
 	public void mnemonicB(String mov, boolean byteMode) {
-		m_opcodeString = mov + (byteMode ? "b" : "");
+		mnemonic(mov + (byteMode ? "b" : ""));
 	}
 
-
-	public void appendOperandPart(String dest) {
-		m_operandString.append(dest);
+	public DisContext operandPunctuation(String s) {
+		m_hasOperand = true;
+		if(m_render) {
+			m_operands.add(line().newItem(ItemType.Punctuation, s));
+		}
+		return this;
 	}
 
-	public void appendOperand(String val) {
-		if(m_operandString.length() != 0)
-			m_operandString.append(",");
-		m_operandString.append(val);
+	public DisContext operandRegister(String s) {
+		m_hasOperand = true;
+		if(m_render) {
+			m_operands.add(line().newItem(ItemType.Register, s));
+		}
+		return this;
 	}
 
-	public boolean isOperandEmpty() {
-		return m_operandString.length() == 0;
+	public DisContext operandLabel(Label label) {
+		m_hasOperand = true;
+		if(m_render) {
+			m_operands.add(line().newItem(ItemType.Label, label.getName()));
+		}
+		return this;
 	}
+
+	public DisContext operandNumber(String s) {
+		m_hasOperand = true;
+		if(m_render) {
+			m_operands.add(line().newItem(ItemType.Number, s));
+		}
+		return this;
+	}
+
 
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Labels														*/
@@ -335,6 +419,8 @@ public class DisContext {
 			alt.from(m_startAddress);
 			return alt;
 		}
+		if(m_render)
+			throw new IllegalStateException("Label " + label + " being created after pass 1");
 		alt = new Label(address, label, type).from(m_startAddress);
 		list.add(alt);
 		return alt;
@@ -429,12 +515,19 @@ public class DisContext {
 		return m_addressString;
 	}
 
-	public String getOpcodeString() {
-		return m_opcodeString;
+	public List<DisplayItem> getMnemonic() {
+		return m_mnemonic;
 	}
 
-	public String getOperandString() {
-		return m_operandString.toString();
+	public List<DisplayItem> getOperands() {
+		return m_operands;
 	}
 
+	public boolean hasMnemonic() {
+		return m_hasMnemonic;
+	}
+
+	public boolean hasOperand() {
+		return m_hasOperand;
+	}
 }

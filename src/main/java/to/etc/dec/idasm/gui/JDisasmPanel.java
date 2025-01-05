@@ -4,6 +4,7 @@ import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.Label;
+import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
 
@@ -73,12 +74,12 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/**
 	 * Selection start address
 	 */
-	private int m_selectionStart = 036500;
+	private int m_selectionStart;// = 036500;
 
 	/**
 	 * Selection end address (exclusive)
 	 */
-	private int m_selectionEnd = 036530;
+	private int m_selectionEnd;// = 036530;
 
 
 	public JDisasmPanel(IByteSource source, InfoModel infoModel, IDisassembler disassembler) throws Exception {
@@ -133,6 +134,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			if(PAINTDBG)
 				System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
 			m_context.setCurrentAddress(addr);
+			m_context.setRender(true);
 			while(m_yPos < endY) {
 				if(PAINTDBG)
 					System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
@@ -205,12 +207,22 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			g.drawString(context.getAsciiBytes(), x, y);
 			x += m_charsSize + m_spacing;
 			g.setColor(Color.BLACK);
-			g.drawString(context.getOpcodeString(), x, y);
+			g.drawString(itemsToString(context.getMnemonic()), x, y);
 			x += m_mnemSize + m_spacing;
-			g.drawString(context.getOperandString(), x, y);
+			g.drawString(itemsToString(context.getOperands()), x, y);
 		}
 		y += m_fontHeight;
 		return y - atY - m_maxAscent;
+	}
+
+	private final StringBuilder m_itemSb = new StringBuilder();
+
+	private String itemsToString(List<DisplayItem> list) {
+		m_itemSb.setLength(0);
+		for(DisplayItem displayItem : list) {
+			m_itemSb.append(displayItem.getText());
+		}
+		return m_itemSb.toString();
 	}
 
 	private void initialize() throws Exception {
@@ -247,7 +259,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				+ m_spacing + m_bytesSize
 				+ m_spacing + m_charsSize;
 
-			ctx.disassembleBlock(m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
+			//-- Do pass 1
+			ctx.predisassembleBlock(m_disassembler, m_startAddress, m_source.getEndAddress());
+
+			ctx.disassembleAndRenderBlock(m_disassembler, m_startAddress, m_source.getEndAddress(), a -> {
 				addLine(a.getStartAddress(), m_yPos);
 				int height = renderLine(g, a, m_yPos, true);
 				m_yPos += height;
@@ -270,6 +285,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		int yPos = m_posMap[index];
 		m_lineCount = index + 1;
 		Graphics g = getGraphics();
+		m_context.setRender(true);
 		while(m_context.getCurrentAddress() < m_source.getEndAddress()) {
 			m_context.disassembleLine(m_disassembler, a -> {});
 			int height = renderLine(g, m_context, yPos, true);
@@ -377,6 +393,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 					return;
 
 				int addr = m_lineAddresses[index];            // The address of the line
+				if(PAINTDBG)
+					System.out.println("CLICK at index " + index + " address " + Integer.toOctalString(addr) + " ypos=" + e.getY());
 				if(e.isShiftDown()) {
 					//-- We want to select multiple lines..
 					int newSelStart = m_selectionStart;
