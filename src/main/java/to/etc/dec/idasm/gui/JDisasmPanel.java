@@ -173,7 +173,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	 * @return The height of the rendered area
 	 */
 	private int renderLine(Graphics g, DisContext context, int atY, boolean calculateHeightOnly) throws Exception {
-		int y = atY + m_maxAscent;                            // The baseline to draw at
+		int baselineY = atY + m_maxAscent;                            // The baseline to draw at
+		int y = atY;
 
 		//-- Do we have label(s)?
 		List<Label> labels = context.getLabels(context.getStartAddress());
@@ -186,13 +187,14 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				int width = m_fontMetrics.stringWidth(s);
 				if(x + width > getSize().width) {
 					x = m_labelStartX;
-					y += m_fontHeight;
+					baselineY += m_fontHeight;
 				} else {
 					x += width;
 				}
 				if(!calculateHeightOnly)
-					g.drawString(s, drawX, y);
+					g.drawString(s, drawX, baselineY);
 			}
+			baselineY += m_fontHeight;
 			y += m_fontHeight;
 		}
 
@@ -200,19 +202,33 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		if(!calculateHeightOnly) {
 			int x = m_leftMargin;
 			g.setColor(Color.GRAY);
-			g.drawString(context.getAddressString(), x, y);
+			g.drawString(context.getAddressString(), x, baselineY);
 			x += m_addrSize + m_spacing;
-			g.drawString(context.getInstBytes(), x, y);
+			g.drawString(context.getInstBytes(), x, baselineY);
 			x += m_bytesSize + m_spacing;
-			g.drawString(context.getAsciiBytes(), x, y);
+			g.drawString(context.getAsciiBytes(), x, baselineY);
 			x += m_charsSize + m_spacing;
 			g.setColor(Color.BLACK);
-			g.drawString(itemsToString(context.getMnemonic()), x, y);
+			renderDisplayItems(g, context.getMnemonic(), x, y);
+			//g.drawString(itemsToString(context.getMnemonic()), x, baselineY);
 			x += m_mnemSize + m_spacing;
-			g.drawString(itemsToString(context.getOperands()), x, y);
+			renderDisplayItems(g, context.getOperands(), x, y);
+			//g.drawString(itemsToString(context.getOperands()), x, baselineY);
 		}
+		baselineY += m_fontHeight;
 		y += m_fontHeight;
-		return y - atY - m_maxAscent;
+		context.line().setLocation(0, atY, getSize().width, baselineY);
+		return y - atY;
+	}
+
+	private void renderDisplayItems(Graphics g, List<DisplayItem> list, int x, int y) {
+		int baselineY = y + m_maxAscent;
+		for(DisplayItem displayItem : list) {
+			g.drawString(displayItem.getText(), x, baselineY);
+			int width = m_fontMetrics.stringWidth(displayItem.getText());
+			displayItem.setLocation(x, y, x + width, y + m_fontHeight);
+			x += width;
+		}
 	}
 
 	private final StringBuilder m_itemSb = new StringBuilder();

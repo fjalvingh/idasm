@@ -14,6 +14,8 @@ final public class DisplayLine {
 	/** The address for the line, if filled */
 	private int m_address;
 
+	private int m_bx, m_by, m_ex, m_ey;
+
 	public DisplayLine(DisplayCache cache) {
 		m_cache = cache;
 	}
@@ -51,5 +53,12 @@ final public class DisplayLine {
 			m_cache.freeItem(di);
 		}
 		m_itemList.clear();
+	}
+
+	public void setLocation(int bx, int by, int ex, int ey) {
+		m_bx = bx;
+		m_by = by;
+		m_ex = ex;
+		m_ey = ey;
 	}
 }

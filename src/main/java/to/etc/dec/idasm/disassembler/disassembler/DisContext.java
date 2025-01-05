@@ -269,7 +269,7 @@ public class DisContext {
 		}
 	}
 
-	private DisplayLine line() {
+	public DisplayLine line() {
 		return Objects.requireNonNull(m_line);
 	}
 

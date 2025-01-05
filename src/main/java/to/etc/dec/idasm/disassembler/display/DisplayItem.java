@@ -5,6 +5,8 @@ final public class DisplayItem {
 
 	private ItemType m_type;
 
+	private int m_bx, m_by, m_ex, m_ey;
+
 	public String getText() {
 		return m_text;
 	}
@@ -19,5 +21,12 @@ final public class DisplayItem {
 
 	public void setType(ItemType type) {
 		m_type = type;
+	}
+
+	public void setLocation(int bx, int by, int ex, int ey) {
+		m_bx = bx;
+		m_by = by;
+		m_ex = ex;
+		m_ey = ey;
 	}
 }
