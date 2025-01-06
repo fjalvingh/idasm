@@ -42,8 +42,8 @@ public class PdpDisassembler implements IDisassembler {
 	}
 
 	@Override public void disassemble(DisContext ctx) throws Exception {
-		if(ctx.getCurrentAddress() == 036366)
-			System.out.println();
+		//if(ctx.getCurrentAddress() == 036366)
+		//	System.out.println();
 		int inst = ctx.getWordLE();
 
 		boolean byteMode = (inst & 0100000) != 0;

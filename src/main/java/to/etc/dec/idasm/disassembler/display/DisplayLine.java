@@ -61,4 +61,28 @@ final public class DisplayLine {
 		m_ex = ex;
 		m_ey = ey;
 	}
+
+	public int getBx() {
+		return m_bx;
+	}
+
+	public int getBy() {
+		return m_by;
+	}
+
+	public int getEx() {
+		return m_ex;
+	}
+
+	public int getEy() {
+		return m_ey;
+	}
+
+	public int getAddress() {
+		return m_address;
+	}
+
+	@Override public String toString() {
+		return "@" + Integer.toOctalString(m_address) + " " + m_by + ".." + m_ey;
+	}
 }

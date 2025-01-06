@@ -273,6 +273,12 @@ public class DisContext {
 		return Objects.requireNonNull(m_line);
 	}
 
+	public DisplayLine ownLine() {
+		DisplayLine line = m_line;
+		m_line = null;
+		return line;
+	}
+
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Writing decoded data to the output buffers					*/
 	/*----------------------------------------------------------------------*/

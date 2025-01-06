@@ -5,8 +5,10 @@ import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
+import to.etc.dec.idasm.disassembler.display.DisplayLine;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
+import to.etc.dec.idasm.disassembler.util.Util;
 
 import javax.swing.*;
 import java.awt.*;
@@ -14,6 +16,7 @@ import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
@@ -81,6 +84,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	 */
 	private int m_selectionEnd;// = 036530;
 
+	final private List<DisplayLine> m_displayLines = new ArrayList<>();
+
 
 	public JDisasmPanel(IByteSource source, InfoModel infoModel, IDisassembler disassembler) throws Exception {
 		m_source = source;
@@ -103,7 +108,9 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	@Override public void paintComponent(Graphics g) {
 		super.paintComponent(g);
+
 		try {
+			clearOutUnusedLines();
 			Graphics2D g2d = (Graphics2D) g;
 			g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
 			g2d.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
@@ -135,6 +142,9 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				System.out.println("- index=" + index + ", ypos=" + m_yPos + ", addr=" + Integer.toOctalString(addr));
 			m_context.setCurrentAddress(addr);
 			m_context.setRender(true);
+
+			int displayLineIndex = calculateDisplayLineIndex(addr);
+
 			while(m_yPos < endY) {
 				if(PAINTDBG)
 					System.out.println("-- renderLine ix=" + index + " @" + m_yPos + ", addr=" + Integer.toOctalString(m_context.getCurrentAddress()));
@@ -148,11 +158,58 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				}
 				m_context.disassembleLine(m_disassembler, a -> {});
 				int height = renderLine(g, m_context, m_yPos, false);
+				DisplayLine line = m_context.ownLine();
+				m_displayLines.add(displayLineIndex++, line);
+
 				m_yPos += height;
 				index++;
+
+				while(displayLineIndex < m_displayLines.size()) {
+					DisplayLine odl = m_displayLines.get(displayLineIndex);
+					if(odl.getBy() < m_yPos) {
+						m_displayLines.remove(displayLineIndex);
+					} else {
+						break;
+					}
+				}
 			}
 		} catch(Exception x) {
 			x.printStackTrace();
+		}
+	}
+
+	private int calculateDisplayLineIndex(int addr) {
+		int index = Util.binarySearch(m_displayLines, addr, a -> a.getAddress(), Integer::compare);
+		if(index < 0)
+			index = -(index + 1);
+		//if(index > 0 && m_displayLines.get(index).getAddress() == addr)
+		//	index--;
+		return index;
+	}
+
+	private void clearOutUnusedLines() {
+		JViewport vp = (JViewport) getParent();
+		//System.out.println("Pos = " + vp.getViewPosition());
+		Point pos = vp.getViewPosition();
+		while(m_displayLines.size() > 0) {
+			DisplayLine line = m_displayLines.get(0);
+			if(line.getEy() <= pos.y) {
+				m_displayLines.remove(0);
+				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+			} else {
+				break;
+			}
+		}
+
+		int ey = pos.y + vp.getSize().height;
+		while(m_displayLines.size() > 0) {
+			DisplayLine line = m_displayLines.get(m_displayLines.size() - 1);
+			if(line.getBy() >= ey) {
+				m_displayLines.remove(m_displayLines.size() - 1);
+				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+			} else {
+				break;
+			}
 		}
 	}
 
@@ -217,7 +274,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 		baselineY += m_fontHeight;
 		y += m_fontHeight;
-		context.line().setLocation(0, atY, getSize().width, baselineY);
+		context.line().setLocation(0, atY, getSize().width, y);
 		return y - atY;
 	}
 
