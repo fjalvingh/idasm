@@ -1,5 +1,6 @@
 package to.etc.dec.idasm.gui;
 
+import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
@@ -15,7 +16,6 @@ import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
-import java.awt.event.MouseListener;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -93,6 +93,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_disassembler = disassembler;
 		setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		addMouseListener(m_mouseListener);
+		addMouseMotionListener(m_mouseListener);
 	}
 
 	@Override public Dimension getPreferredSize() {
@@ -215,13 +216,6 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private boolean inSelection(DisContext dc) {
 		return dc.getCurrentAddress() >= m_selectionStart && dc.getCurrentAddress() < m_selectionEnd;
-	}
-
-	/**
-	 * Return T if the address specified is inside a code area.
-	 */
-	private boolean inCodeArea(int addr) {
-		return true;
 	}
 
 	/**
@@ -426,6 +420,45 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_lineCount++;
 	}
 
+	@Nullable
+	private DisplayLine findLineByCoords(Point pos) {
+		System.out.println("findLineByCoords: " + pos);
+		if(m_displayLines.isEmpty())
+			return null;
+		if(pos.y < m_displayLines.get(0).getBy())
+			return null;
+		if(pos.y > m_displayLines.get(m_displayLines.size() - 1).getEy())
+			return null;
+
+		int index = Util.binarySearch(m_displayLines, pos.y, a -> a.getBy(), Integer::compareTo);
+		if(index < 0) {
+			//-- Not found; index will be after the line - so we need to decrement it one more
+			index = -(index + 1);
+			if(index > 0)
+				index--;
+		}
+		DisplayLine line = m_displayLines.get(index);
+		if(pos.y >= line.getBy() && pos.y < line.getEy()) {
+			System.out.println("Found Line: " + line);
+			return line;
+		}
+		return null;
+	}
+
+	@Nullable
+	DisplayItem findItemByCoords(Point pos) {
+		DisplayLine line = findLineByCoords(pos);
+		if(null == line)
+			return null;
+
+		//-- Now: walk all line items
+		for(DisplayItem item : line.getItemList()) {
+			if(item.contains(pos))
+				return item;
+		}
+		return null;
+	}
+
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Scrollable interface										*/
 	/*----------------------------------------------------------------------*/
@@ -453,7 +486,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Mouse listener												*/
 	/*----------------------------------------------------------------------*/
-	private final MouseListener m_mouseListener = new MouseAdapter() {
+	private final MouseAdapter m_mouseListener = new MouseAdapter() {
+		@Nullable
+		private DisplayItem m_prevItem;
+
 		@Override public void mouseClicked(MouseEvent e) {
 			//System.out.println("mouseClicked " + e.getX() + "," + e.getY());
 		}
@@ -499,6 +535,24 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				int addr = m_lineAddresses[index];            // The address of the line
 				createPopupMenu(e.getX(), e.getY(), addr);
 			}
+		}
+
+
+		@Override public void mouseMoved(MouseEvent e) {
+			DisplayItem item = findItemByCoords(e.getPoint());
+			if(null == item)
+				return;
+
+			Graphics g = getGraphics();
+			DisplayItem prevItem = m_prevItem;
+			if(null != prevItem) {
+				g.setColor(Color.WHITE);
+				g.drawRect(prevItem.getBx(), prevItem.getBy(), prevItem.getEx() - prevItem.getBx(), prevItem.getEy() - prevItem.getBy());
+			}
+
+			g.setColor(Color.GREEN);
+			g.drawRect(item.getBx(), item.getBy(), item.getEx() - item.getBx(), item.getEy() - item.getBy());
+			m_prevItem = item;
 		}
 	};
 

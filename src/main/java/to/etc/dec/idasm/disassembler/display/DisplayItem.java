@@ -1,5 +1,7 @@
 package to.etc.dec.idasm.disassembler.display;
 
+import java.awt.*;
+
 final public class DisplayItem {
 	private String m_text;
 
@@ -28,5 +30,25 @@ final public class DisplayItem {
 		m_by = by;
 		m_ex = ex;
 		m_ey = ey;
+	}
+
+	public boolean contains(Point pos) {
+		return pos.y >= m_by && pos.y < m_ey && pos.x >= m_bx && pos.x < m_ex;
+	}
+
+	public int getBx() {
+		return m_bx;
+	}
+
+	public int getBy() {
+		return m_by;
+	}
+
+	public int getEx() {
+		return m_ex;
+	}
+
+	public int getEy() {
+		return m_ey;
 	}
 }

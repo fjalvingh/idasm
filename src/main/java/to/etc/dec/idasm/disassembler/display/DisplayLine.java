@@ -82,6 +82,10 @@ final public class DisplayLine {
 		return m_address;
 	}
 
+	public List<DisplayItem> getItemList() {
+		return m_itemList;
+	}
+
 	@Override public String toString() {
 		return "@" + Integer.toOctalString(m_address) + " " + m_by + ".." + m_ey;
 	}
