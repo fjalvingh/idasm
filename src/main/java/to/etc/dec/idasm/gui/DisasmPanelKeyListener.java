@@ -23,7 +23,11 @@ public class DisasmPanelKeyListener implements KeyListener {
 						return;
 
 					case '/':
-						m_panel.editCommentAtCursor();
+						m_panel.editBlockCommentAtCursor();
+						return;
+
+					case ';':
+						m_panel.editLineCommentAtCursor();
 						return;
 				}
 			}

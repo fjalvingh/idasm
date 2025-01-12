@@ -176,11 +176,15 @@ final public class InfoModel {
 		return m_lineCommentMap.get(address);
 	}
 
-	public void setLineComment(int address, String text) throws Exception {
+	public void setLineComment(int address, @Nullable String text) throws Exception {
 		Comment cmt = m_lineCommentMap.get(address);
 		if(null == cmt) {
+			if(text == null)
+				return;
 			cmt = new Comment(address, text);
 			m_lineCommentMap.put(address, cmt);
+		} else if(null == text) {
+			m_lineCommentMap.remove(address);
 		} else {
 			cmt.setComment(text);
 		}

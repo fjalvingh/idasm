@@ -73,10 +73,10 @@ final class DisasmPanelMouseAdapter extends MouseAdapter {
 		if(null == line) {
 			return;
 		}
+		m_currentLine = line;
 		DisplayItem item = line.findItemByCoords(e.getPoint());
 		if(null == item)
 			return;
-		m_currentLine = line;
 
 		Graphics g = m_panel.getGraphics();
 		DisplayItem prevItem = m_selectedItem;

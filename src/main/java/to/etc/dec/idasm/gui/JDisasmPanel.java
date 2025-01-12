@@ -7,6 +7,7 @@ import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.display.DisplayLine;
 import to.etc.dec.idasm.disassembler.display.ItemType;
+import to.etc.dec.idasm.disassembler.model.Comment;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.Label;
 import to.etc.dec.idasm.disassembler.model.RegionType;
@@ -80,6 +81,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	private int m_mnemSize;
 
 	private int m_labelStartX;
+
+	private int m_operandSize;
 
 	/**
 	 * Selection start address
@@ -278,8 +281,18 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			renderDisplayItems(g, context.getMnemonic(), x, y);
 			//g.drawString(itemsToString(context.getMnemonic()), x, baselineY);
 			x += m_mnemSize + m_spacing;
-			renderDisplayItems(g, context.getOperands(), x, y);
-			//g.drawString(itemsToString(context.getOperands()), x, baselineY);
+			int endx = renderDisplayItems(g, context.getOperands(), x, y);
+
+			Comment cmt = m_infoModel.getLineComment(context.getStartAddress());
+			if(null != cmt) {
+
+				x += m_operandSize + m_spacing;
+				if(endx > x)
+					x = endx;
+				g.setColor(Color.GREEN.darker());
+				g.drawString("; " + cmt.getComment(), x, baselineY);
+				g.setColor(Color.BLACK);
+			}
 		}
 		baselineY += m_fontHeight;
 		y += m_fontHeight;
@@ -287,7 +300,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return y - atY;
 	}
 
-	private void renderDisplayItems(Graphics g, List<DisplayItem> list, int x, int y) {
+	private int renderDisplayItems(Graphics g, List<DisplayItem> list, int x, int y) {
 		int baselineY = y + m_maxAscent;
 		for(DisplayItem displayItem : list) {
 			g.drawString(displayItem.getText(), x, baselineY);
@@ -295,6 +308,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			displayItem.setLocation(x, y, x + width, y + m_fontHeight);
 			x += width;
 		}
+		return x;
 	}
 
 	private final StringBuilder m_itemSb = new StringBuilder();
@@ -336,6 +350,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			m_charsSize = fontMetrics.stringWidth(calculateMeasureString(8));
 
 			m_mnemSize = fontMetrics.stringWidth(calculateMeasureString(m_disassembler.getMaxMnemonicSize(), 'm'));
+			m_operandSize = fontMetrics.stringWidth(calculateMeasureString(25));
 
 			m_labelStartX = m_leftMargin + m_addrSize
 				+ m_spacing + m_bytesSize
@@ -719,10 +734,29 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '.';
 	}
 
-	public void editCommentAtCursor() {
+	public void editBlockCommentAtCursor() {
 
 
 
 
+	}
+
+	public void editLineCommentAtCursor() throws Exception {
+		DisplayLine line = m_selectedDisplayLine;
+		if(null == line)
+			return;
+
+		int address = line.getAddress();
+		Comment cmt = m_infoModel.getLineComment(address);
+		String text = cmt == null ? "" : cmt.getComment();
+
+		String newText = JOptionPane.showInputDialog("Comment", text);
+		if(null == newText || newText.isBlank()) {
+			m_infoModel.setLineComment(address, null);
+		} else {
+			newText = newText.trim();
+			m_infoModel.setLineComment(address, newText);
+		}
+		redoAll();
 	}
 }
