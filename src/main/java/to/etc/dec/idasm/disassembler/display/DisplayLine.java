@@ -1,5 +1,8 @@
 package to.etc.dec.idasm.disassembler.display;
 
+import org.eclipse.jdt.annotation.Nullable;
+
+import java.awt.*;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -34,7 +37,6 @@ final public class DisplayLine {
 		return item;
 	}
 
-
 	public void free() {
 		releaseItems();
 		m_cache.lineFree(this);
@@ -53,6 +55,15 @@ final public class DisplayLine {
 			m_cache.freeItem(di);
 		}
 		m_itemList.clear();
+	}
+
+	@Nullable
+	public DisplayItem findItemByCoords(Point pos) {
+		for(DisplayItem item : getItemList()) {
+			if(item.contains(pos))
+				return item;
+		}
+		return null;
 	}
 
 	public void setLocation(int bx, int by, int ex, int ey) {

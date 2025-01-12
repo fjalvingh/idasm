@@ -7,6 +7,7 @@ import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.display.DisplayLine;
+import to.etc.dec.idasm.disassembler.display.ItemType;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
 import to.etc.dec.idasm.disassembler.util.Util;
@@ -14,12 +15,15 @@ import to.etc.dec.idasm.disassembler.util.Util;
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.awt.event.MouseAdapter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
 public class JDisasmPanel extends JPanel implements Scrollable {
+	static public final int MAX_LABEL_SIZE = 32;
+
 	private final IByteSource m_source;
 
 	private final InfoModel m_infoModel;
@@ -29,6 +33,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	private final int m_startAddress = 036352;
 
 	private final Color m_selectionColor = new Color(0, 220, 220);
+
+	private final MouseAdapter m_mouseListener = new DisasmPanelMouseAdapter(this);
+
+	private final KeyListener m_keyListener = new DisasmPanelKeyListener(this);
 
 	/**
 	 * The addresses for each line of the disassembly.
@@ -85,6 +93,11 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	final private List<DisplayLine> m_displayLines = new ArrayList<>();
 
+	@Nullable
+	private DisplayItem m_selectedDisplayItem;
+
+	@Nullable
+	private DisplayLine m_selectedDisplayLine;
 
 	public JDisasmPanel(IByteSource source, InfoModel infoModel, IDisassembler disassembler) throws Exception {
 		m_source = source;
@@ -93,6 +106,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		setBorder(BorderFactory.createLineBorder(Color.BLACK));
 		addMouseListener(m_mouseListener);
 		addMouseMotionListener(m_mouseListener);
+		addKeyListener(m_keyListener);
+		setFocusable(true);
 	}
 
 	@Override public Dimension getPreferredSize() {
@@ -195,7 +210,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			DisplayLine line = m_displayLines.get(0);
 			if(line.getEy() <= pos.y) {
 				m_displayLines.remove(0);
-				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+				//System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
 			} else {
 				break;
 			}
@@ -206,7 +221,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			DisplayLine line = m_displayLines.get(m_displayLines.size() - 1);
 			if(line.getBy() >= ey) {
 				m_displayLines.remove(m_displayLines.size() - 1);
-				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+				//System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
 			} else {
 				break;
 			}
@@ -419,9 +434,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_lineCount++;
 	}
 
-	@Nullable
-	private DisplayLine findLineByCoords(Point pos) {
-		System.out.println("findLineByCoords: " + pos);
+	@Nullable DisplayLine findLineByCoords(Point pos) {
+		//System.out.println("findLineByCoords: " + pos);
 		if(m_displayLines.isEmpty())
 			return null;
 		if(pos.y < m_displayLines.get(0).getBy())
@@ -438,7 +452,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 		DisplayLine line = m_displayLines.get(index);
 		if(pos.y >= line.getBy() && pos.y < line.getEy()) {
-			System.out.println("Found Line: " + line);
+			//System.out.println("Found Line: " + line);
 			return line;
 		}
 		return null;
@@ -449,13 +463,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		DisplayLine line = findLineByCoords(pos);
 		if(null == line)
 			return null;
-
-		//-- Now: walk all line items
-		for(DisplayItem item : line.getItemList()) {
-			if(item.contains(pos))
-				return item;
-		}
-		return null;
+		return line.findItemByCoords(pos);
 	}
 
 	/*----------------------------------------------------------------------*/
@@ -483,10 +491,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	}
 
 	/*----------------------------------------------------------------------*/
-	/*	CODING:	Mouse listener												*/
+	/*	CODING:	Selections													*/
 	/*----------------------------------------------------------------------*/
-	private final MouseAdapter m_mouseListener = new DisasmPanelMouseAdapter(this);
-
 	/**
 	 * Remove the previous selection by asking for a repaint.
 	 */
@@ -510,6 +516,35 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			return;
 
 		repaint(0L, 0, startY, getSize().width, endY);
+	}
+
+	public int getSelectionStart() {
+		return m_selectionStart;
+	}
+
+	public void setSelectionStart(int selectionStart) {
+		m_selectionStart = selectionStart;
+	}
+
+	public int getSelectionEnd() {
+		return m_selectionEnd;
+	}
+
+	public void setSelectionEnd(int selectionEnd) {
+		m_selectionEnd = selectionEnd;
+	}
+
+	public void setSelection(int from, int to) {
+		if(from > to)
+			throw new IllegalArgumentException("from > to");
+		m_selectionStart = from;
+		m_selectionEnd = to;
+	}
+
+
+	public void setSelectedItem(DisplayLine line, DisplayItem item) {
+		m_selectedDisplayLine = line;
+		m_selectedDisplayItem = item;
 	}
 
 
@@ -566,28 +601,13 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		redoFrom(cs);
 	}
 
-	public int getSelectionStart() {
-		return m_selectionStart;
+	@Override public void setFocusable(boolean focusable) {
+		super.setFocusable(focusable);
 	}
 
-	public void setSelectionStart(int selectionStart) {
-		m_selectionStart = selectionStart;
-	}
-
-	public int getSelectionEnd() {
-		return m_selectionEnd;
-	}
-
-	public void setSelectionEnd(int selectionEnd) {
-		m_selectionEnd = selectionEnd;
-	}
-
-	public void setSelection(int from, int to) {
-		if(from > to)
-			throw new IllegalArgumentException("from > to");
-		m_selectionStart = from;
-		m_selectionEnd = to;
-	}
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Simple getters and setters									*/
+	/*----------------------------------------------------------------------*/
 
 	int getLineAddress(int index) {
 		if(index < 0 || index > m_lineCount)
@@ -600,4 +620,80 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			throw new IllegalStateException("Posmap address index " + index + " out of bounds (max=" + m_lineCount + ")");
 		return m_posMap[index];
 	}
+
+
+
+	public void editLabelAtCursor() {
+		DisplayItem item = m_selectedDisplayItem;
+		if(null == item)
+			return;
+		if(item.getType() != ItemType.Label) {
+			//-- Can we find a single label on the line? If so use that, else report an error.
+			DisplayLine line = m_selectedDisplayLine;
+			if(null == line)
+				return;
+
+			DisplayItem label = null;
+			for(DisplayItem di : line.getItemList()) {
+				if(di.getType() == ItemType.Label) {
+					if(label == null) {
+						label = di;
+					} else {
+						//-- 2 labels on the line, report a message.
+						JOptionPane.showMessageDialog(this.getParent(), "More than one label here, please select the label to change");
+						return;
+					}
+				}
+			}
+			if(label == null)
+				return;
+			item = label;
+		}
+
+		//-- We are not at a label. Ask for it to be renamed
+		String newLabel = JOptionPane.showInputDialog("New label name", item.getText());
+		if(null == newLabel || newLabel.isBlank())
+			return;
+		String error = isValidLabelName(newLabel);
+		if(null != error) {
+			JOptionPane.showMessageDialog(getParent(), error);
+			return;
+		}
+
+
+
+
+
+
+
+
+	}
+
+	@Nullable
+	static private String isValidLabelName(String name) {
+		name = name.trim();
+		if(name.length() > MAX_LABEL_SIZE) {
+			return "Label name too long, max is " + MAX_LABEL_SIZE + " characters";
+		}
+		if(name.isBlank())
+			return "Empty label";
+		if(!isValidLabelStart(name.charAt(0)))
+			return "Label name must start with a letter or the underscore";
+
+		for(int i = 1; i < name.length(); i++) {
+			char c = name.charAt(i);
+			if(!isValidLabelRest(c))
+				return "Illegal character in label name. Allowed are letters, digits, the underscore and the dot";
+		}
+		return null;
+	}
+
+	static private boolean isValidLabelStart(char c) {
+		return Character.isLetter(c) || c == '_';
+	}
+
+	static private boolean isValidLabelRest(char c) {
+		return Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '.';
+	}
+
 }

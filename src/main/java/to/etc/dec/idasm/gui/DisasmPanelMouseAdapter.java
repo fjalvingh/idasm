@@ -2,16 +2,19 @@ package to.etc.dec.idasm.gui;
 
 import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
+import to.etc.dec.idasm.disassembler.display.DisplayLine;
 
 import java.awt.*;
 import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
-class DisasmPanelMouseAdapter extends MouseAdapter {
+final class DisasmPanelMouseAdapter extends MouseAdapter {
 	private final JDisasmPanel m_panel;
 
 	@Nullable
-	private DisplayItem m_prevItem;
+	private DisplayItem m_selectedItem;
+
+	private DisplayLine m_currentLine;
 
 	public DisasmPanelMouseAdapter(JDisasmPanel panel) {
 		m_panel = panel;
@@ -23,6 +26,8 @@ class DisasmPanelMouseAdapter extends MouseAdapter {
 
 	@Override public void mousePressed(MouseEvent e) {
 		if(e.getButton() == MouseEvent.BUTTON1) {
+			m_panel.setSelectedItem(m_currentLine, m_selectedItem);
+
 			//-- In which line have we clicked?
 			int index = m_panel.calculateIndexByY(e.getY());
 			if(index == -1)
@@ -32,7 +37,7 @@ class DisasmPanelMouseAdapter extends MouseAdapter {
 			if(JDisasmPanel.PAINTDBG)
 				System.out.println("CLICK at index " + index + " address " + Integer.toOctalString(addr) + " ypos=" + e.getY());
 			if(e.isShiftDown()) {
-				//-- We want to select multiple lines..
+				//-- We want to select multiple lines.
 				int newSelStart = m_panel.getSelectionStart();
 				int newSelEnd = m_panel.getSelectionEnd();
 				m_panel.clearSelection();                        // Remove the old selection
@@ -64,12 +69,17 @@ class DisasmPanelMouseAdapter extends MouseAdapter {
 
 
 	@Override public void mouseMoved(MouseEvent e) {
-		DisplayItem item = m_panel.findItemByCoords(e.getPoint());
+		DisplayLine line = m_panel.findLineByCoords(e.getPoint());
+		if(null == line) {
+			return;
+		}
+		DisplayItem item = line.findItemByCoords(e.getPoint());
 		if(null == item)
 			return;
+		m_currentLine = line;
 
 		Graphics g = m_panel.getGraphics();
-		DisplayItem prevItem = m_prevItem;
+		DisplayItem prevItem = m_selectedItem;
 		if(null != prevItem) {
 			g.setColor(Color.WHITE);
 			g.drawRect(prevItem.getBx(), prevItem.getBy(), prevItem.getEx() - prevItem.getBx(), prevItem.getEy() - prevItem.getBy());
@@ -77,6 +87,6 @@ class DisasmPanelMouseAdapter extends MouseAdapter {
 
 		g.setColor(Color.GREEN);
 		g.drawRect(item.getBx(), item.getBy(), item.getEx() - item.getBx(), item.getEy() - item.getBy());
-		m_prevItem = item;
+		m_selectedItem = item;
 	}
 }
