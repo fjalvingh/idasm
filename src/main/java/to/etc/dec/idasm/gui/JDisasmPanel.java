@@ -750,7 +750,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		Comment cmt = m_infoModel.getLineComment(address);
 		String text = cmt == null ? "" : cmt.getComment();
 
-		String newText = JOptionPane.showInputDialog("Comment", text);
+		String newText = JOptionPane.showInputDialog(getParent(), "Comment", text);
 		if(null == newText || newText.isBlank()) {
 			m_infoModel.setLineComment(address, null);
 		} else {
