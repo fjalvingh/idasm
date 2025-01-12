@@ -21,6 +21,10 @@ public class DisasmPanelKeyListener implements KeyListener {
 					case 'l':
 						m_panel.editLabelAtCursor();
 						return;
+
+					case '/':
+						m_panel.editCommentAtCursor();
+						return;
 				}
 			}
 

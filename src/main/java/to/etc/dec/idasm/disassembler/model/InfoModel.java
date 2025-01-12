@@ -51,6 +51,11 @@ final public class InfoModel {
 			.filter(a -> a.isUserDefined())
 			.collect(Collectors.toList());
 		so.setUserLabelList(userLabels);
+
+		//-- Comments
+		so.setBlockCommentList(new ArrayList<>(m_blockCommentMap.values()));
+		so.setLineCommentList(new ArrayList<>(m_lineCommentMap.values()));
+
 		try(FileOutputStream fos = new FileOutputStream(m_file)) {
 			objectMapper.writeValue(fos, so);
 		}
@@ -75,6 +80,20 @@ final public class InfoModel {
 					m_labelMap.put(userLabel.getAddress(), userLabel);
 				}
 			}
+
+			List<Comment> cmtList = so.getBlockCommentList();
+			if(null != cmtList) {
+				for(Comment cmt : cmtList) {
+					m_blockCommentMap.put(cmt.getAddress(), cmt);
+				}
+			}
+
+			cmtList = so.getLineCommentList();
+			if(null != cmtList) {
+				for(Comment cmt : cmtList) {
+					m_lineCommentMap.put(cmt.getAddress(), cmt);
+				}
+			}
 		}
 	}
 
@@ -90,7 +109,6 @@ final public class InfoModel {
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Labels														*/
 	/*----------------------------------------------------------------------*/
-
 	/**
 	 * Set a user label.
 	 */
@@ -124,25 +142,51 @@ final public class InfoModel {
 		return old;
 	}
 
-	//
-	//	List<Label> list = m_labelMap.computeIfAbsent(address, k -> new ArrayList<>());
-	//	Label alt = list.stream()
-	//		.filter(a -> a.getAddress() == address && a.getName().equals(label))
-	//		.findFirst()
-	//		.orElse(null);
-	//	if(null != alt) {
-	//		alt.from(referencedFromAddress);
-	//		return alt;
-	//	}
-	//	//if(m_render)
-	//	//	throw new IllegalStateException("Label " + label + " being created after pass 1");
-	//	alt = new Label(address, label, type, false).from(referencedFromAddress);
-	//	list.add(alt);
-	//	return alt;
-	//}
-
 	@Nullable
 	public Label getLabel(int address) {
 		return m_labelMap.get(address);
 	}
+
+
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Comments													*/
+	/*----------------------------------------------------------------------*/
+	private final Map<Integer, Comment> m_blockCommentMap = new HashMap<>();
+
+	@Nullable
+	public Comment getBlockComment(int address) {
+		return m_blockCommentMap.get(address);
+	}
+
+	public void setBlockComment(int address, String text) throws Exception {
+		Comment cmt = m_blockCommentMap.get(address);
+		if(null == cmt) {
+			cmt = new Comment(address, text);
+			m_blockCommentMap.put(address, cmt);
+		} else {
+			cmt.setComment(text);
+		}
+		save();
+	}
+
+	private final Map<Integer, Comment> m_lineCommentMap = new HashMap<>();
+
+	@Nullable
+	public Comment getLineComment(int address) {
+		return m_lineCommentMap.get(address);
+	}
+
+	public void setLineComment(int address, String text) throws Exception {
+		Comment cmt = m_lineCommentMap.get(address);
+		if(null == cmt) {
+			cmt = new Comment(address, text);
+			m_lineCommentMap.put(address, cmt);
+		} else {
+			cmt.setComment(text);
+		}
+		save();
+	}
+
+
+
 }

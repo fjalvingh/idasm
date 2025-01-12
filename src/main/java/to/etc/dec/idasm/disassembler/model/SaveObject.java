@@ -10,6 +10,10 @@ public class SaveObject {
 
 	private List<Label> m_userLabelList = new ArrayList<>();
 
+	private List<Comment> m_blockCommentList = new ArrayList<>();
+
+	private List<Comment> m_lineCommentList = new ArrayList<>();
+
 	public int getVersion() {
 		return m_version;
 	}
@@ -32,5 +36,21 @@ public class SaveObject {
 
 	public void setUserLabelList(List<Label> userLabelList) {
 		m_userLabelList = userLabelList;
+	}
+
+	public List<Comment> getBlockCommentList() {
+		return m_blockCommentList;
+	}
+
+	public void setBlockCommentList(List<Comment> blockCommentList) {
+		m_blockCommentList = blockCommentList;
+	}
+
+	public List<Comment> getLineCommentList() {
+		return m_lineCommentList;
+	}
+
+	public void setLineCommentList(List<Comment> lineCommentList) {
+		m_lineCommentList = lineCommentList;
 	}
 }

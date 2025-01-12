@@ -719,4 +719,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '.';
 	}
 
+	public void editCommentAtCursor() {
+
+
+
+
+	}
 }
