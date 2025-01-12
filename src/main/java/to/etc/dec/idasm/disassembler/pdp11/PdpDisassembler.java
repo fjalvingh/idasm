@@ -6,14 +6,15 @@ import to.etc.dec.idasm.disassembler.disassembler.DataDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IDataDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
-import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.disassembler.NumericBase;
+import to.etc.dec.idasm.disassembler.model.Label;
 
 import java.util.List;
 
 public class PdpDisassembler implements IDisassembler {
 	@Override public void configureDefaults(DisContext context) throws Exception {
 		context.setBase(NumericBase.Oct);
+		context.setAddressBits(16);
 	}
 
 	@NonNull @Override public IDataDisassembler getDataDisassembler() {

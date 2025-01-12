@@ -1,5 +1,7 @@
 package to.etc.dec.idasm.disassembler.display;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import java.awt.*;
 
 final public class DisplayItem {
@@ -8,6 +10,9 @@ final public class DisplayItem {
 	private ItemType m_type;
 
 	private int m_bx, m_by, m_ex, m_ey;
+
+	@Nullable
+	private Object m_attachedObject;
 
 	public String getText() {
 		return m_text;
@@ -50,5 +55,14 @@ final public class DisplayItem {
 
 	public int getEy() {
 		return m_ey;
+	}
+
+	@Nullable public Object getAttachedObject() {
+		return m_attachedObject;
+	}
+
+	public DisplayItem setAttachedObject(@Nullable Object attachedObject) {
+		m_attachedObject = attachedObject;
+		return this;
 	}
 }

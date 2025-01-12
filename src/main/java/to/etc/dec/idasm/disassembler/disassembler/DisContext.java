@@ -7,16 +7,14 @@ import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.display.DisplayLine;
 import to.etc.dec.idasm.disassembler.display.ItemType;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
+import to.etc.dec.idasm.disassembler.model.Label;
 import to.etc.dec.idasm.disassembler.model.Region;
 import to.etc.dec.idasm.disassembler.model.RegionModel;
 import to.etc.dec.idasm.disassembler.model.RegionType;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Disassembler context.
@@ -39,6 +37,8 @@ public class DisContext {
 
 	private Endianness m_endianness = Endianness.Little;
 
+	private int m_addressBits = 16;
+
 	private int m_currentAddress;
 
 	/**
@@ -55,8 +55,6 @@ public class DisContext {
 	private List<DisplayItem> m_mnemonic = new ArrayList<>();
 
 	private List<DisplayItem> m_operands = new ArrayList<>();
-
-	private final Map<Integer, List<Label>> m_labelMap = new HashMap<>();
 
 	/**
 	 * The line we're rendering into, or null if we do not want to render (for label calculating passes).
@@ -367,7 +365,6 @@ public class DisContext {
 		return sb.toString();
 	}
 
-
 	public void mnemonic(String mov) {
 		m_hasMnemonic = true;
 		if(m_render) {
@@ -398,7 +395,7 @@ public class DisContext {
 	public DisContext operandLabel(Label label) {
 		m_hasOperand = true;
 		if(m_render) {
-			m_operands.add(line().newItem(ItemType.Label, label.getName()));
+			m_operands.add(line().newItem(ItemType.Label, label.getName()).setAttachedObject(label));
 		}
 		return this;
 	}
@@ -411,43 +408,56 @@ public class DisContext {
 		return this;
 	}
 
-
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Labels														*/
 	/*----------------------------------------------------------------------*/
-	public Label addLabel(int address, String label, AddrTarget type) {
-		List<Label> list = m_labelMap.computeIfAbsent(address, k -> new ArrayList<>());
-		Label alt = list.stream()
-			.filter(a -> a.getAddress() == address && a.getName().equals(label))
-			.findFirst()
-			.orElse(null);
-		if(null != alt) {
-			alt.from(m_startAddress);
-			return alt;
-		}
-		if(m_render)
-			throw new IllegalStateException("Label " + label + " being created after pass 1");
-		alt = new Label(address, label, type).from(m_startAddress);
-		list.add(alt);
-		return alt;
-	}
+
+
+
+	//public Label addLabel(int address, String label, AddrTarget type) {
+	//	List<Label> list = m_labelMap.computeIfAbsent(address, k -> new ArrayList<>());
+	//	Label alt = list.stream()
+	//		.filter(a -> a.getAddress() == address && a.getName().equals(label))
+	//		.findFirst()
+	//		.orElse(null);
+	//	if(null != alt) {
+	//		alt.from(m_startAddress);
+	//		return alt;
+	//	}
+	//	if(m_render)
+	//		throw new IllegalStateException("Label " + label + " being created after pass 1");
+	//	alt = new Label(address, label, type, false).from(m_startAddress);
+	//	list.add(alt);
+	//	return alt;
+	//}
 
 	public Label addAutoLabel(int address, AddrTarget type) {
-		String name = "L" + valueInBase(address);
-		return addLabel(address, name, type);
+		String name = "L" + m_base.valueInBase(address, m_addressBits, true);
+		return m_infoModel.addAutoLabel(address, type, name);
+	}
+
+	public Label setLabel(int address, String name, AddrTarget type) {
+		return m_infoModel.setLabel(address, name, type);
+	}
+
+	public boolean isAutoLabelFormat(String s) {
+		if(!s.startsWith("L"))
+			return false;
+		int chars = m_base.valueLengthForBits(m_addressBits);
+		if(s.length() != chars + 1)
+			return false;
+
+		for(int i = 1; i < s.length(); i++) {
+			char c = s.charAt(i);
+			if(!m_base.isValidChar(c))
+				return false;
+		}
+		return true;
 	}
 
 	public List<Label> getLabels(int address) {
-		return m_labelMap.get(address);
-	}
-
-
-	public String getLabelsAsString() {
-		List<Label> lm = m_labelMap.get(m_startAddress);
-		if(null == lm) {
-			return null;
-		}
-		return lm.stream().map(a -> a.getName() + ": ").collect(Collectors.joining());
+		Label label = m_infoModel.getLabel(address);
+		return null == label ? null : List.of(label);
 	}
 
 	/**
@@ -475,6 +485,14 @@ public class DisContext {
 
 	public void setEndianness(Endianness endianness) {
 		m_endianness = endianness;
+	}
+
+	public int getAddressBits() {
+		return m_addressBits;
+	}
+
+	public void setAddressBits(int addressBits) {
+		m_addressBits = addressBits;
 	}
 
 	public void setBase(NumericBase base) {

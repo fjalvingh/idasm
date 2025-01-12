@@ -1,5 +1,6 @@
 package to.etc.dec.idasm.disassembler.disassembler;
 
+import to.etc.dec.idasm.disassembler.model.Label;
 import to.etc.dec.idasm.disassembler.model.Region;
 
 /**
@@ -52,8 +53,8 @@ final public class DataDisassembler implements IDataDisassembler {
 		}
 
 		//-- If we're at the start of the table: add a table label
-		String lbls = "tbl" + ctx.valueInBase(region.getStart());
-		Label regionStartLabel = ctx.addLabel(region.getStart(), lbls, AddrTarget.Code);
+		Label regionStartLabel = ctx.addAutoLabel(region.getStart(), AddrTarget.Code);
+		regionStartLabel.from(ctx.getCurrentAddress());
 
 		long offset = ctx.getValueAt(ctx.getCurrentAddress(), dataType, true);
 		long address = region.getStart() + offset;

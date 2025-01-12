@@ -4,11 +4,11 @@ import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
-import to.etc.dec.idasm.disassembler.disassembler.Label;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.display.DisplayLine;
 import to.etc.dec.idasm.disassembler.display.ItemType;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
+import to.etc.dec.idasm.disassembler.model.Label;
 import to.etc.dec.idasm.disassembler.model.RegionType;
 import to.etc.dec.idasm.disassembler.util.Util;
 
@@ -654,24 +654,22 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		String newLabel = JOptionPane.showInputDialog("New label name", item.getText());
 		if(null == newLabel || newLabel.isBlank())
 			return;
+		newLabel = newLabel.trim();
 		String error = isValidLabelName(newLabel);
 		if(null != error) {
 			JOptionPane.showMessageDialog(getParent(), error);
 			return;
 		}
-
-
-
-
-
-
+		Label oldLabel = (Label) item.getAttachedObject();
+		if(null == oldLabel)
+			return;
+		m_context.setLabel(oldLabel.getAddress(), newLabel, oldLabel.getType());
 
 
 	}
 
 	@Nullable
-	static private String isValidLabelName(String name) {
-		name = name.trim();
+	private String isValidLabelName(String name) {
 		if(name.length() > MAX_LABEL_SIZE) {
 			return "Label name too long, max is " + MAX_LABEL_SIZE + " characters";
 		}
@@ -685,6 +683,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			if(!isValidLabelRest(c))
 				return "Illegal character in label name. Allowed are letters, digits, the underscore and the dot";
 		}
+
+		//-- If the label is L with an address refuse it
+		if(m_context.isAutoLabelFormat(name))
+			return "This label has a label name that looks like an auto-generated label. That is confusing and thus not allowed";
 		return null;
 	}
 
