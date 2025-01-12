@@ -15,7 +15,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.KeyEvent;
 import java.awt.event.MouseAdapter;
-import java.awt.event.MouseEvent;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -77,12 +76,12 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/**
 	 * Selection start address
 	 */
-	private int m_selectionStart;// = 036500;
+	private int m_selectionStart;		// = 036500;
 
 	/**
 	 * Selection end address (exclusive)
 	 */
-	private int m_selectionEnd;// = 036530;
+	private int m_selectionEnd;			// = 036530;
 
 	final private List<DisplayLine> m_displayLines = new ArrayList<>();
 
@@ -105,7 +104,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return new Dimension(1024, m_panelHeight);
 	}
 
-	static private final boolean PAINTDBG = false;
+	static public final boolean PAINTDBG = false;
 
 	@Override public void paintComponent(Graphics g) {
 		super.paintComponent(g);
@@ -368,7 +367,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/**
 	 * Calculate the index in the line arrays for the specified Y position.
 	 */
-	private int calculateIndexByY(int y) {
+	public int calculateIndexByY(int y) {
 		//-- Calculate the closest Y line
 		int index = Arrays.binarySearch(m_posMap, 0, m_lineCount, y);
 		if(index < 0) {
@@ -486,86 +485,18 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/*----------------------------------------------------------------------*/
 	/*	CODING:	Mouse listener												*/
 	/*----------------------------------------------------------------------*/
-	private final MouseAdapter m_mouseListener = new MouseAdapter() {
-		@Nullable
-		private DisplayItem m_prevItem;
-
-		@Override public void mouseClicked(MouseEvent e) {
-			//System.out.println("mouseClicked " + e.getX() + "," + e.getY());
-		}
-
-		@Override public void mousePressed(MouseEvent e) {
-			if(e.getButton() == MouseEvent.BUTTON1) {
-				//-- In which line have we clicked?
-				int index = calculateIndexByY(e.getY());
-				if(index == -1)
-					return;
-
-				int addr = m_lineAddresses[index];            // The address of the line
-				if(PAINTDBG)
-					System.out.println("CLICK at index " + index + " address " + Integer.toOctalString(addr) + " ypos=" + e.getY());
-				if(e.isShiftDown()) {
-					//-- We want to select multiple lines..
-					int newSelStart = m_selectionStart;
-					int newSelEnd = m_selectionEnd;
-					clearSelection();                        // Remove the old selection
-					if(addr < newSelStart) {
-						newSelStart = addr;            // Extend from the front
-					} else {
-						//-- Inclusive selection -> we need the next address
-						newSelEnd = m_lineAddresses[index + 1];
-					}
-					m_selectionStart = newSelStart;
-					m_selectionEnd = newSelEnd;
-
-					//-- Calculate positions
-					repaintSelection();
-				} else {
-					//-- Clear the previous selection and select only this new line.
-					clearSelection();
-					m_selectionStart = addr;
-					m_selectionEnd = m_lineAddresses[index + 1];
-					repaint(0L, 0, m_posMap[index], getSize().width, m_posMap[index + 1]);
-				}
-			} else if(e.getButton() == MouseEvent.BUTTON3) {
-				int index = calculateIndexByY(e.getY());
-				if(index == -1)
-					return;
-
-				int addr = m_lineAddresses[index];            // The address of the line
-				createPopupMenu(e.getX(), e.getY(), addr);
-			}
-		}
-
-
-		@Override public void mouseMoved(MouseEvent e) {
-			DisplayItem item = findItemByCoords(e.getPoint());
-			if(null == item)
-				return;
-
-			Graphics g = getGraphics();
-			DisplayItem prevItem = m_prevItem;
-			if(null != prevItem) {
-				g.setColor(Color.WHITE);
-				g.drawRect(prevItem.getBx(), prevItem.getBy(), prevItem.getEx() - prevItem.getBx(), prevItem.getEy() - prevItem.getBy());
-			}
-
-			g.setColor(Color.GREEN);
-			g.drawRect(item.getBx(), item.getBy(), item.getEx() - item.getBx(), item.getEy() - item.getBy());
-			m_prevItem = item;
-		}
-	};
+	private final MouseAdapter m_mouseListener = new DisasmPanelMouseAdapter(this);
 
 	/**
 	 * Remove the previous selection by asking for a repaint.
 	 */
-	private void clearSelection() {
+	public void clearSelection() {
 		repaintSelection();
 		m_selectionStart = 0;
 		m_selectionEnd = 0;
 	}
 
-	private void repaintSelection() {
+	public void repaintSelection() {
 		if(m_selectionStart >= m_selectionEnd)                    // Nothing selected?
 			return;
 		int startIndex = calculateIndexByAddr(m_selectionStart);
@@ -586,7 +517,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	/*	CODING:	Popup Menu													*/
 	/*----------------------------------------------------------------------*/
 
-	private void createPopupMenu(int x, int y, int address) {
+	void createPopupMenu(int x, int y, int address) {
 		//-- Bla bla bla
 
 		//-- Create the actual menu
@@ -633,5 +564,40 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_selectionStart = 0;
 		m_selectionEnd = 0;
 		redoFrom(cs);
+	}
+
+	public int getSelectionStart() {
+		return m_selectionStart;
+	}
+
+	public void setSelectionStart(int selectionStart) {
+		m_selectionStart = selectionStart;
+	}
+
+	public int getSelectionEnd() {
+		return m_selectionEnd;
+	}
+
+	public void setSelectionEnd(int selectionEnd) {
+		m_selectionEnd = selectionEnd;
+	}
+
+	public void setSelection(int from, int to) {
+		if(from > to)
+			throw new IllegalArgumentException("from > to");
+		m_selectionStart = from;
+		m_selectionEnd = to;
+	}
+
+	int getLineAddress(int index) {
+		if(index < 0 || index > m_lineCount)
+			throw new IllegalStateException("Line address index " + index + " out of bounds (max=" + m_lineCount + ")");
+		return m_lineAddresses[index];
+	}
+
+	int getPosMap(int index) {
+		if(index < 0 || index > m_lineCount)
+			throw new IllegalStateException("Posmap address index " + index + " out of bounds (max=" + m_lineCount + ")");
+		return m_posMap[index];
 	}
 }
