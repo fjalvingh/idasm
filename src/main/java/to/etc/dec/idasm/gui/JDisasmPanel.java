@@ -242,13 +242,13 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		int y = atY;
 
 		//-- Do we have label(s)?
-		List<Label> labels = context.getLabels(context.getStartAddress());
-		if(null != labels && !labels.isEmpty()) {
+		List<DisplayItem> labels = context.getLabelForInstruction();
+		if(!labels.isEmpty()) {
 			g.setColor(Color.BLUE);
 			int x = m_labelStartX;
-			for(Label label : labels) {
+			for(DisplayItem label : labels) {
 				int drawX = x;
-				String s = label.getName() + ": ";
+				String s = label.getText() + ": ";
 				int width = m_fontMetrics.stringWidth(s);
 				if(x + width > getSize().width) {
 					x = m_labelStartX;
@@ -256,6 +256,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				} else {
 					x += width;
 				}
+				label.setLocation(drawX, y, x, y + m_fontHeight);
 				if(!calculateHeightOnly)
 					g.drawString(s, drawX, baselineY);
 			}

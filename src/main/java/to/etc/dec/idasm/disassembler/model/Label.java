@@ -19,6 +19,9 @@ final public class Label {
 
 	private boolean m_userDefined;
 
+	public Label() {
+	}
+
 	public Label(int address, String name, AddrTarget type, boolean userDefined) {
 		m_address = address;
 		m_name = name;

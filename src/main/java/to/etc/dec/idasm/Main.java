@@ -85,7 +85,7 @@ public class Main {
 		String as = ctx.getAddressString();
 
 		//-- Do we have labels here?
-		List<Label> labels = ctx.getLabels(ctx.getStartAddress());
+		List<Label> labels = ctx.getLabelsByAddress(ctx.getStartAddress());
 		TreeSet<Integer> aset = new TreeSet<>();
 		if(null != labels) {
 			//-- Add all labels on a separate line

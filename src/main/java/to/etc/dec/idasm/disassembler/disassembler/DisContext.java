@@ -1,5 +1,6 @@
 package to.etc.dec.idasm.disassembler.disassembler;
 
+import org.eclipse.jdt.annotation.NonNull;
 import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.deidioting.ConsumerEx;
 import to.etc.dec.idasm.disassembler.display.DisplayCache;
@@ -50,6 +51,9 @@ public class DisContext {
 
 	private final StringBuilder m_instBytes = new StringBuilder();
 
+	@Nullable
+	private List<DisplayItem> m_labelItemList;
+
 	private String m_addressString;
 
 	private List<DisplayItem> m_mnemonic = new ArrayList<>();
@@ -85,6 +89,7 @@ public class DisContext {
 		m_operands.clear();
 		m_hasMnemonic = false;
 		m_hasOperand = false;
+		m_labelItemList = null;
 
 		//-- Initialize the Line if rendering
 		DisplayLine line = m_line;
@@ -455,7 +460,23 @@ public class DisContext {
 		return true;
 	}
 
-	public List<Label> getLabels(int address) {
+	@NonNull
+	public List<DisplayItem> getLabelForInstruction() {
+		List<DisplayItem> list = m_labelItemList;
+		if(null == list) {
+			Label label = m_infoModel.getLabel(m_startAddress);
+			if(null == label) {
+				list = m_labelItemList = List.of();
+			} else {
+				DisplayItem item = line().newItem(ItemType.Label, label.getName());
+				item.setAttachedObject(label);
+				list = m_labelItemList = List.of(item);
+			}
+		}
+		return list;
+	}
+
+	public List<Label> getLabelsByAddress(int address) {
 		Label label = m_infoModel.getLabel(address);
 		return null == label ? null : List.of(label);
 	}
@@ -483,7 +504,7 @@ public class DisContext {
 		return m_endianness;
 	}
 
-	public void setEndianness(Endianness endianness) {
+	public void setEndianness(DisContext.Endianness endianness) {
 		m_endianness = endianness;
 	}
 

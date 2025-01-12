@@ -429,7 +429,7 @@ public class PdpDisassembler implements IDisassembler {
 						ctx.operandLabel(label);
 						return;
 					}
-					List<Label> labels = ctx.getLabels(imm);
+					List<Label> labels = ctx.getLabelsByAddress(imm);
 					if(labels != null) {
 						ctx.operandPunctuation("#").operandLabel(labels.get(0));
 						return;
@@ -445,7 +445,7 @@ public class PdpDisassembler implements IDisassembler {
 						return;
 					}
 
-					labels = ctx.getLabels(abs);
+					labels = ctx.getLabelsByAddress(abs);
 					if(labels != null) {
 						ctx.operandPunctuation("@#").operandLabel(labels.get(0));
 						return;
@@ -520,7 +520,7 @@ public class PdpDisassembler implements IDisassembler {
 						Label label = ctx.addAutoLabel(imm, target);
 						return label.getName();
 					}
-					List<Label> labels = ctx.getLabels(imm);
+					List<Label> labels = ctx.getLabelsByAddress(imm);
 					if(labels != null) {
 						return "#" + labels.get(0).getName();
 					}
@@ -534,7 +534,7 @@ public class PdpDisassembler implements IDisassembler {
 						return label.getName();
 					}
 
-					labels = ctx.getLabels(abs);
+					labels = ctx.getLabelsByAddress(abs);
 					if(labels != null) {
 						return "@#" + labels.get(0).getName();
 					}
