@@ -11,19 +11,23 @@ public class DisasmPanelKeyListener implements KeyListener {
 	}
 
 	@Override public void keyTyped(KeyEvent e) {
-		int modifiers = e.getModifiersEx();
-		if(modifiers == 0) {
-			switch(e.getKeyChar()) {
-				default:
-					return;
+		try {
+			int modifiers = e.getModifiersEx();
+			if(modifiers == 0) {
+				switch(e.getKeyChar()){
+					default:
+						return;
 
-				case 'l':
-					m_panel.editLabelAtCursor();
-					return;
+					case 'l':
+						m_panel.editLabelAtCursor();
+						return;
+				}
 			}
+
+		} catch(Exception ex) {
+			//-- Checked exceptions are idiotic.
+			ex.printStackTrace();
 		}
-
-
 	}
 
 	@Override public void keyReleased(KeyEvent e) {

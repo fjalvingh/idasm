@@ -354,6 +354,26 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		}
 	}
 
+	private void redoAll() throws Exception {
+		//-- Recalculate all lines
+		m_context.setCurrentAddress(m_startAddress);
+		int yPos = 0;
+		m_lineCount = 0;
+		Graphics g = getGraphics();
+		m_context.setRender(true);
+		addLine(m_context.getCurrentAddress(), yPos);
+		while(m_context.getCurrentAddress() < m_source.getEndAddress()) {
+			m_context.disassembleLine(m_disassembler, a -> {});
+			int height = renderLine(g, m_context, yPos, true);
+			yPos += height;
+			addLine(m_context.getCurrentAddress(), yPos);
+		}
+		m_panelHeight = yPos;
+
+		//-- Now: rerender
+		repaint();
+	}
+
 	private void redoFrom(int address) throws Exception {
 		//-- We need to fully re-render from here.
 		int index = calculateIndexByAddr(address);
@@ -623,7 +643,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 
 
-	public void editLabelAtCursor() {
+	public void editLabelAtCursor() throws Exception {
 		DisplayItem item = m_selectedDisplayItem;
 		if(null == item)
 			return;
@@ -652,7 +672,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 		//-- We are not at a label. Ask for it to be renamed
 		String newLabel = JOptionPane.showInputDialog("New label name", item.getText());
-		if(null == newLabel || newLabel.isBlank())
+		if(null == newLabel || newLabel.isBlank() || newLabel.equalsIgnoreCase(item.getText()))
 			return;
 		newLabel = newLabel.trim();
 		String error = isValidLabelName(newLabel);
@@ -664,8 +684,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		if(null == oldLabel)
 			return;
 		m_context.setLabel(oldLabel.getAddress(), newLabel, oldLabel.getType());
-
-
+		m_infoModel.save();
+		redoAll();
 	}
 
 	@Nullable
