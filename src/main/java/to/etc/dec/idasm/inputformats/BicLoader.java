@@ -58,6 +58,7 @@ public class BicLoader extends AbstractFileFormat {
 			int end = m_end;
 			byte[] data = new byte[m_end - start];				// #bytes actually read
 			System.arraycopy(m_memory, start, data, 0, m_end - start);
+			System.out.println("Loaded " + data.length + " starting at 0x" + Integer.toHexString(start) + ", 0" + Integer.toOctalString(start));
 			return new FileByteSource(data, start);
 		}
 
@@ -106,13 +107,13 @@ public class BicLoader extends AbstractFileFormat {
 			m_offset += bytes;
 			int sum = read();						// Forget about the sum
 
-			System.out.println("Loaded 0x"
-				+ Integer.toHexString(len)
-				+ " (0" + Integer.toOctalString(len) + " oct)"
-				+ " bytes at 0x"
-				+ Integer.toHexString(start)
-				+ " (0" + Integer.toOctalString(start) + " oct)"
-			);
+			//System.out.println("Loaded 0x"
+			//	+ Integer.toHexString(len)
+			//	+ " (0" + Integer.toOctalString(len) + " oct)"
+			//	+ " bytes at 0x"
+			//	+ Integer.toHexString(start)
+			//	+ " (0" + Integer.toOctalString(start) + " oct)"
+			//);
 			return start + len;
 		}
 

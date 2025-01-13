@@ -39,4 +39,9 @@ public class FileFormatRegistry {
 		return null;
 	}
 
+	static {
+		register(new BinLoader());
+		register(new BicLoader());
+	}
+
 }
