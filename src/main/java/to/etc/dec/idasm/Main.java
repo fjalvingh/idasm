@@ -10,9 +10,10 @@ import to.etc.dec.idasm.disassembler.disassembler.IByteSource;
 import to.etc.dec.idasm.disassembler.display.DisplayItem;
 import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.Label;
-import to.etc.dec.idasm.disassembler.pdp11.FileByteSource;
 import to.etc.dec.idasm.disassembler.pdp11.PdpDisassembler;
 import to.etc.dec.idasm.gui.MainWindow;
+import to.etc.dec.idasm.inputformats.FileFormatRegistry;
+import to.etc.dec.idasm.inputformats.IFileFormat;
 
 import java.io.File;
 import java.util.List;
@@ -24,6 +25,10 @@ public class Main {
 
 	@Option(name = "-g", required = false, usage = "Use the GUI")
 	private boolean m_gui;
+
+	@Option(name = "-filetype", aliases = {"-ft"}, usage = "Select one of the supported file types, use ? for a list")
+	private String m_filetype;
+
 
 	static public void main(String[] args) throws Exception {
 		new Main().run(args);
@@ -39,8 +44,27 @@ public class Main {
 			p.printUsage(System.err);
 			System.exit(10);
 		}
+		String filetype = m_filetype;
+		if("?".equals(filetype)) {
+			System.out.println("File types:");
+			for(IFileFormat ff : FileFormatRegistry.getFormatList()) {
+				System.out.println(ff.name() + " : " + ff.description());
+			}
+			System.exit(0);
+		}
+		File input = new File(m_input);
 
-		IByteSource data = loadFile();
+		IFileFormat format = filetype == null ? FileFormatRegistry.findFormat(input) : FileFormatRegistry.findFormatByName(filetype);
+		if(null == format) {
+			if(filetype == null) {
+				System.err.println("No file format found for " + input);
+			} else {
+				System.err.println("Unknown file format with name '" + filetype + "'");
+			}
+			System.exit(10);
+			throw new IllegalStateException();
+		}
+		IByteSource data = format.read(input);
 		InfoModel infoModel = loadInfoModel();
 
 		if(m_gui) {
@@ -159,14 +183,5 @@ public class Main {
 			}
 		}
 	}
-
-	/**
-	 * Load the specified file into the memory array.
-	 */
-	private IByteSource loadFile() throws Exception {
-		File inf = new File(m_input);
-		return new FileByteSource(inf);
-	}
-
 
 }
