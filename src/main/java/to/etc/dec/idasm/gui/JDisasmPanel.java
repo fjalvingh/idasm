@@ -743,7 +743,39 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		return Character.isLetterOrDigit(c) || c == '_' || c == '$' || c == '.';
 	}
 
-	public void editBlockCommentAtCursor() {
+	public void editBlockCommentAtCursor() throws Exception {
+		DisplayLine line = m_selectedDisplayLine;
+		if(null == line)
+			return;
+
+		int address = line.getAddress();
+		Comment cmt = m_infoModel.getBlockComment(address);
+		String text = cmt == null ? "" : cmt.getComment();
+
+		//-- We need multiline input
+		JTextArea ta = new JTextArea(text);
+		ta.setLineWrap(true);
+		ta.setWrapStyleWord(true);
+		ta.setTabSize(4);
+		ta.setColumns(80);
+		ta.setRows(10);
+		JScrollPane sp = new JScrollPane(ta);
+
+		int what = JOptionPane.showOptionDialog(getParent(), sp, "Block comment", JOptionPane.OK_CANCEL_OPTION, JOptionPane.QUESTION_MESSAGE, null, null, null);
+		if(what != JOptionPane.OK_OPTION)
+			return;
+		String newText = ta.getText();
+
+		if(newText == null) {
+			return;									// Cancelled
+		}
+		if(newText.isBlank()) {
+			m_infoModel.setBlockComment(address, null);
+		} else {
+			newText = newText.trim();
+			m_infoModel.setBlockComment(address, newText);
+		}
+		redoAll();
 
 
 
