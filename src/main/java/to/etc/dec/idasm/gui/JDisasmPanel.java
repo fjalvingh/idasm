@@ -55,6 +55,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private final Font m_font = new Font("Arial", Font.PLAIN, 14);
 
+	private final Font m_italicsFont;
+
 	private int m_yPos;
 
 	private int m_fontHeight;
@@ -81,6 +83,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	private int m_mnemSize;
 
 	private int m_labelStartX;
+
+	private int m_blockCommentX;
 
 	private int m_operandSize;
 
@@ -111,6 +115,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		addMouseMotionListener(m_mouseListener);
 		addKeyListener(m_keyListener);
 		setFocusable(true);
+
+		Font font = m_font;
+		m_italicsFont = font.deriveFont(Font.ITALIC);
+
 	}
 
 	@Override public Dimension getPreferredSize() {
@@ -243,10 +251,16 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 	 * @return The height of the rendered area
 	 */
 	private int renderLine(Graphics g, DisContext context, int atY, boolean calculateHeightOnly) throws Exception {
-		int baselineY = atY + m_maxAscent;                            // The baseline to draw at
 		int y = atY;
 
+		//-- Block comment
+		Comment blockComment = m_infoModel.getBlockComment(context.getStartAddress());
+		if(null != blockComment) {
+			y = renderBlockComment(g, blockComment, y, calculateHeightOnly);
+		}
+
 		//-- Do we have label(s)?
+		int baselineY = y + m_maxAscent;                            // The baseline to draw at
 		List<DisplayItem> labels = context.getLabelForInstruction();
 		if(!labels.isEmpty()) {
 			g.setColor(Color.BLUE);
@@ -299,6 +313,38 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		y += m_fontHeight;
 		context.line().setLocation(0, atY, getSize().width, y);
 		return y - atY;
+	}
+
+	static private final int MAX_BLOCKCOMMENT_LINES = 8;
+
+	/**
+	 * Render a block comment. This renders each line without word wrap(!), for a max. of 8 lines.
+	 */
+	private int renderBlockComment(Graphics g, Comment blockComment, int y, boolean calculateHeightOnly) {
+		String comment = blockComment.getComment();
+		String[] split = comment.split("\n");
+		int maxLine = split.length;
+		if(maxLine > MAX_BLOCKCOMMENT_LINES)
+			maxLine = MAX_BLOCKCOMMENT_LINES;
+
+		if(calculateHeightOnly) {
+			return y + m_fontHeight * maxLine;
+		}
+
+		String semi = "; ";
+		int semiwidth = m_fontMetrics.stringWidth(semi);
+		for(int i = 0; i < maxLine; i++) {
+			g.setColor(Color.GREEN.darker().darker());
+			g.drawString(semi, m_blockCommentX, y + m_maxAscent);
+
+			String text = split[i];
+			g.setFont(m_italicsFont);
+			g.drawString(text, m_blockCommentX + semiwidth, y + m_maxAscent);
+			y += m_fontHeight;
+		}
+		g.setColor(Color.BLACK);
+		g.setFont(m_font);
+		return y;
 	}
 
 	private int renderDisplayItems(Graphics g, List<DisplayItem> list, int x, int y) {
@@ -356,6 +402,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 			m_labelStartX = m_leftMargin + m_addrSize
 				+ m_spacing + m_bytesSize
 				+ m_spacing + m_charsSize;
+
+			m_blockCommentX = m_labelStartX;
 
 			//-- Do pass 1
 			ctx.predisassembleBlock(m_disassembler, m_startAddress, m_source.getEndAddress());
