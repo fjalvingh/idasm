@@ -33,7 +33,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private final int m_startAddress = 036352;
 
-	private final Color m_selectionColor = new Color(0, 220, 220);
+	private final Color m_selectionColor = new Color(200, 255, 220);
 
 	private final MouseAdapter m_mouseListener = new DisasmPanelMouseAdapter(this);
 
@@ -212,8 +212,9 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		while(m_displayLines.size() > 0) {
 			DisplayLine line = m_displayLines.get(0);
 			if(line.getEy() <= pos.y) {
-				m_displayLines.remove(0);
-				//System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+				DisplayLine dl = m_displayLines.remove(0);
+				dl.free();
+				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
 			} else {
 				break;
 			}
@@ -223,8 +224,9 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		while(m_displayLines.size() > 0) {
 			DisplayLine line = m_displayLines.get(m_displayLines.size() - 1);
 			if(line.getBy() >= ey) {
-				m_displayLines.remove(m_displayLines.size() - 1);
-				//System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
+				DisplayLine dl = m_displayLines.remove(m_displayLines.size() - 1);
+				dl.free();
+				System.out.println("dl: remove line " + Integer.toOctalString(line.getAddress()));
 			} else {
 				break;
 			}
@@ -294,7 +296,6 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				g.setColor(Color.BLACK);
 			}
 		}
-		baselineY += m_fontHeight;
 		y += m_fontHeight;
 		context.line().setLocation(0, atY, getSize().width, y);
 		return y - atY;
@@ -387,7 +388,15 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		m_panelHeight = yPos;
 
 		//-- Now: rerender
+		clearDisplayLines();
 		repaint();
+	}
+
+	private void clearDisplayLines() {
+		for(DisplayLine displayLine : m_displayLines) {
+			displayLine.free();
+		}
+		m_displayLines.clear();
 	}
 
 	private void redoFrom(int address) throws Exception {
@@ -751,7 +760,10 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		String text = cmt == null ? "" : cmt.getComment();
 
 		String newText = JOptionPane.showInputDialog(getParent(), "Comment", text);
-		if(null == newText || newText.isBlank()) {
+		if(newText == null) {
+			return;									// Cancelled
+		}
+		if(newText.isBlank()) {
 			m_infoModel.setLineComment(address, null);
 		} else {
 			newText = newText.trim();
