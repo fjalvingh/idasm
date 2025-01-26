@@ -51,6 +51,8 @@ public class DisContext {
 
 	private final StringBuilder m_instBytes = new StringBuilder();
 
+	private final StringBuilder m_asciiBytes = new StringBuilder();
+
 	@Nullable
 	private List<DisplayItem> m_labelItemList;
 
@@ -84,6 +86,7 @@ public class DisContext {
 	public void start() {
 		m_startAddress = m_currentAddress;
 		m_instBytes.setLength(0);
+		m_asciiBytes.setLength(0);
 		m_addressString = getBaseValue(m_startAddress, m_byteSource.getEndAddress() <= 65536 ? 2 : 4);
 		m_mnemonic.clear();
 		m_operands.clear();
@@ -292,6 +295,7 @@ public class DisContext {
 		operandNumber(valueInBase((int) value));                // FIXME 32bit?
 		operandPunctuation(",");
 		operandNumber(valueInBase(count));
+		appendAscii(" ");
 		m_instBytes.append(valueInBase((int) value)).append(" * ").append(valueInBase(count));
 	}
 
@@ -541,19 +545,29 @@ public class DisContext {
 	}
 
 	public String getAsciiBytes() {
-		StringBuilder sb = new StringBuilder();
+		StringBuilder sb = m_asciiBytes;
+		if(sb.length() > 0)
+			return sb.toString();
 		int pos = m_startAddress;
-		while(pos < m_currentAddress) {
+		while(pos < m_currentAddress && sb.length() < 8) {
 			int val = byteAt(pos++);
-			if(val < 32) {
-				sb.append('.');
-			} else if(val < 128) {
-				sb.append((char) val);
-			} else if(val > 128) {
-				sb.append('.');
-			}
+			sb.append(asciiByte(val));
 		}
 		return sb.toString();
+	}
+
+	private String asciiByte(int val) {
+		if(val < 32) {
+			return ".";
+		} else if(val < 128) {
+			return Character.toString((char) val);
+		} else {
+			return ".";
+		}
+	}
+
+	public void appendAscii(String a) {
+		m_asciiBytes.append(a);
 	}
 
 	public String getAddressString() {
@@ -574,5 +588,9 @@ public class DisContext {
 
 	public boolean hasOperand() {
 		return m_hasOperand;
+	}
+
+	public DisplayCache getCache() {
+		return m_cache;
 	}
 }

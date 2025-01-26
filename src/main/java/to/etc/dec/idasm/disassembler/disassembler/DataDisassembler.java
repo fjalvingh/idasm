@@ -137,8 +137,9 @@ final public class DataDisassembler implements IDataDisassembler {
 		int rll = peekAddr - addr;
 		if(rll >= 4) {
 			//-- render as ds.b value, count
+			rll /= dataType.getLen();						// #of repeats
 			ctx.appendDss(dataType, rll, val);
-			ctx.setCurrentAddress(addr + rll * dataType.getLen());
+			ctx.setCurrentAddress(peekAddr);
 			return;
 		}
 

@@ -47,7 +47,7 @@ final class DisasmPanelMouseAdapter extends MouseAdapter {
 					//-- Inclusive selection -> we need the next address
 					newSelEnd = m_panel.getLineAddress(index + 1);
 				}
-				m_panel.setSelection(newSelEnd, newSelEnd);
+				m_panel.setSelection(newSelStart, newSelEnd);
 
 				//-- Calculate positions
 				m_panel.repaintSelection();

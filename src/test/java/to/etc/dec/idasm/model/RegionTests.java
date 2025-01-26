@@ -172,6 +172,26 @@ public class RegionTests {
 		);
 	}
 
+	@Test
+	public void testOverwriteMultiple() throws Exception {
+		m_model.addRegion(RegionType.WordData, 0, 46);
+		m_model.addRegion(RegionType.WordData, 84, 1024);
+		m_model.addRegion(RegionType.PcRelativeWord, 15634, 15656);
+
+		assertRegions(
+			RegionType.WordData, 0, 46,
+			RegionType.WordData, 84, 1024,
+			RegionType.PcRelativeWord, 15634, 15656
+		);
+
+		m_model.addRegion(RegionType.WordData, 0, 12692);
+		assertRegions(
+			RegionType.WordData, 0, 12692,
+			RegionType.PcRelativeWord, 15634, 15656
+		);
+	}
+
+
 	private List<Region> expand(Object... list) {
 		int lastAddress = 0;
 		List<Region> res = new ArrayList<>();

@@ -31,7 +31,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 
 	private final IDisassembler m_disassembler;
 
-	private final int m_startAddress = 036352;
+	private final int m_startAddress; // = 036352;
 
 	private final Color m_selectionColor = new Color(200, 255, 220);
 
@@ -115,6 +115,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		addMouseMotionListener(m_mouseListener);
 		addKeyListener(m_keyListener);
 		setFocusable(true);
+		m_startAddress = source.getStartAddress();
 
 		Font font = m_font;
 		m_italicsFont = font.deriveFont(Font.ITALIC);
@@ -193,7 +194,8 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				while(displayLineIndex < m_displayLines.size()) {
 					DisplayLine odl = m_displayLines.get(displayLineIndex);
 					if(odl.getBy() < m_yPos) {
-						m_displayLines.remove(displayLineIndex);
+						DisplayLine remove = m_displayLines.remove(displayLineIndex);
+						remove.free();
 					} else {
 						break;
 					}
@@ -239,6 +241,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 				break;
 			}
 		}
+		System.out.println("## lines=" + m_displayLines.size() + " / " + m_context.getCache().used());
 	}
 
 	private boolean inSelection(DisContext dc) {

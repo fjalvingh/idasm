@@ -51,5 +51,9 @@ final public class DisplayCache {
 		m_availableItems.add(item);
 	}
 
+	public int used() {
+		return m_usedLines.size();
+	}
+
 
 }

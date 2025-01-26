@@ -71,6 +71,7 @@ OS action to be executed, depending on the OS that a piece of code is written
 for. It would be good to be able to specify that, and to allow the disassembler
 to disassemble these as recognizable calls. This will require quite some studying
 though; to start with whatever services are exposed by xxdp.
+[More information](pdp11.md)
 
 ## Mandatory warnings
 This is a work in progress and I'm not sure it will even finish ;)

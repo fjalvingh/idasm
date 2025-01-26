@@ -72,9 +72,9 @@ public class Main {
 		} else {
 			PdpDisassembler das = new PdpDisassembler();
 			DisContext ctx = new DisContext(data, infoModel);
-			int startAddress = 036352;
-			ctx.predisassembleBlock(das, startAddress, data.getEndAddress());
-			ctx.disassembleAndRenderBlock(das, startAddress, data.getEndAddress(), disContext -> display(disContext));
+			//int startAddress = 036352;
+			ctx.predisassembleBlock(das, data.getStartAddress(), data.getEndAddress());
+			ctx.disassembleAndRenderBlock(das, data.getStartAddress(), data.getEndAddress(), disContext -> display(disContext));
 		}
 	}
 

@@ -142,8 +142,8 @@ final public class RegionModel {
 			if(region.getStart() > lastAddress) {
 				//-- Insert a code region.
 				index = insertRegionAt(index - 1, RegionType.Code, lastAddress, region.getStart());
-				lastAddress = region.getEnd();
 			}
+			lastAddress = region.getEnd();
 		}
 
 		if(lastAddress < Integer.MAX_VALUE) {
