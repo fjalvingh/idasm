@@ -41,6 +41,7 @@ final public class RegionModel {
 			} else if(start <= region.getStart() && end >= region.getEnd()) {    // Does the new region totally obscure the new one?
 				//-- This replaces the region, at least at the start.
 				index = setRegionAt(index, type, start, region.getEnd());
+				region = m_regionList.get(index);
 				start = region.getEnd();                                        // The rest of the thing goes here. Same regions will be merged later.
 				index++;
 			} else if(start < region.getStart()) {
