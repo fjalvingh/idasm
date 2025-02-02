@@ -7,14 +7,45 @@ import to.etc.dec.idasm.disassembler.disassembler.DisContext;
 import to.etc.dec.idasm.disassembler.disassembler.IDataDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.IDisassembler;
 import to.etc.dec.idasm.disassembler.disassembler.NumericBase;
+import to.etc.dec.idasm.disassembler.model.Documentation;
+import to.etc.dec.idasm.disassembler.model.InfoModel;
 import to.etc.dec.idasm.disassembler.model.Label;
+import to.etc.dec.idasm.disassembler.model.LabelType;
+import to.etc.dec.idasm.disassembler.model.PredefinedLabelsModel;
 
 import java.util.List;
 
 public class PdpDisassembler implements IDisassembler {
+	private final PredefinedLabelsModel m_predefinedModel =  new PredefinedLabelsModel() {
+		@Override protected void appendLabel(InfoModel model, int address, String label, Documentation doc, String desc) {
+			Label lbl = model.setLabel(LabelType.Predefined, address, label, AddrTarget.Data);
+			lbl.updatePredefined(doc, desc);
+
+			//-- Is the label in the 18-bit I/O area?
+			if(isIoAddress18bit(address)) {
+				lbl = model.setLabel(LabelType.Predefined, address & 0xffff, label, AddrTarget.Data);
+				lbl.updatePredefined(doc, desc);
+			}
+		}
+	};
+
+	public PdpDisassembler() throws Exception {
+		m_predefinedModel.loadDocumentation("pdp11-doc.txt");
+	}
+
 	@Override public void configureDefaults(DisContext context) throws Exception {
 		context.setBase(NumericBase.Oct);
 		context.setAddressBits(16);
+
+		m_predefinedModel.loadLabels(context.getInfoModel(),  "pdp11-labels.txt");
+	}
+
+	static public boolean isIoAddress18bit(long address) {
+		return address >= 0760000 && address < 01000000;
+	}
+
+	static public boolean isIoAddress16bit(long address) {
+		return address >= 0174000 && address < 0200000;
 	}
 
 	@NonNull @Override public IDataDisassembler getDataDisassembler() {

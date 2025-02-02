@@ -759,7 +759,7 @@ public class JDisasmPanel extends JPanel implements Scrollable {
 		Label oldLabel = (Label) item.getAttachedObject();
 		if(null == oldLabel)
 			return;
-		m_context.setLabel(oldLabel.getAddress(), newLabel, oldLabel.getType());
+		m_context.setLabel(oldLabel.getAddress(), newLabel, oldLabel.getTargetType());
 		m_infoModel.save();
 		redoAll();
 	}

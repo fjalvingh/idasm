@@ -1,0 +1,105 @@
+0777516		ssr3	MMU		MMU D-Space enable/disable per mode
+
+0777572		ssr0	MMU		MMU Control register and status bits
+0777574		ssr1	MMU		MMU Instruction restart info register
+0777576		ssr2	MMU		MMU Address of instruction causing the fault
+
+# generated
+0772200		SISD0	MMU		Supervisor I space PDR#0
+0772202		SISD1	MMU		Supervisor I space PDR#1
+0772204		SISD2	MMU		Supervisor I space PDR#2
+0772206		SISD3	MMU		Supervisor I space PDR#3
+0772210		SISD4	MMU		Supervisor I space PDR#4
+0772212		SISD5	MMU		Supervisor I space PDR#5
+0772214		SISD6	MMU		Supervisor I space PDR#6
+0772216		SISD7	MMU		Supervisor I space PDR#7
+0772220		SDSD0	MMU		Supervisor D space PDR#0
+0772222		SDSD1	MMU		Supervisor D space PDR#1
+0772224		SDSD2	MMU		Supervisor D space PDR#2
+0772226		SDSD3	MMU		Supervisor D space PDR#3
+0772230		SDSD4	MMU		Supervisor D space PDR#4
+0772232		SDSD5	MMU		Supervisor D space PDR#5
+0772234		SDSD6	MMU		Supervisor D space PDR#6
+0772236		SDSD7	MMU		Supervisor D space PDR#7
+0772240		SISA0	MMU		Supervisor I space PAR#0
+0772242		SISA1	MMU		Supervisor I space PAR#1
+0772244		SISA2	MMU		Supervisor I space PAR#2
+0772246		SISA3	MMU		Supervisor I space PAR#3
+0772250		SISA4	MMU		Supervisor I space PAR#4
+0772252		SISA5	MMU		Supervisor I space PAR#5
+0772254		SISA6	MMU		Supervisor I space PAR#6
+0772256		SISA7	MMU		Supervisor I space PAR#7
+0772260		SDSA0	MMU		Supervisor D space PAR#0
+0772262		SDSA1	MMU		Supervisor D space PAR#1
+0772264		SDSA2	MMU		Supervisor D space PAR#2
+0772266		SDSA3	MMU		Supervisor D space PAR#3
+0772270		SDSA4	MMU		Supervisor D space PAR#4
+0772272		SDSA5	MMU		Supervisor D space PAR#5
+0772274		SDSA6	MMU		Supervisor D space PAR#6
+0772276		SDSA7	MMU		Supervisor D space PAR#7
+0772300		KISD0	MMU		Kernel I space PDR#0
+0772302		KISD1	MMU		Kernel I space PDR#1
+0772304		KISD2	MMU		Kernel I space PDR#2
+0772306		KISD3	MMU		Kernel I space PDR#3
+0772310		KISD4	MMU		Kernel I space PDR#4
+0772312		KISD5	MMU		Kernel I space PDR#5
+0772314		KISD6	MMU		Kernel I space PDR#6
+0772316		KISD7	MMU		Kernel I space PDR#7
+0772320		KDSD0	MMU		Kernel D space PDR#0
+0772322		KDSD1	MMU		Kernel D space PDR#1
+0772324		KDSD2	MMU		Kernel D space PDR#2
+0772326		KDSD3	MMU		Kernel D space PDR#3
+0772330		KDSD4	MMU		Kernel D space PDR#4
+0772332		KDSD5	MMU		Kernel D space PDR#5
+0772334		KDSD6	MMU		Kernel D space PDR#6
+0772336		KDSD7	MMU		Kernel D space PDR#7
+0772340		KISA0	MMU		Kernel I space PAR#0
+0772342		KISA1	MMU		Kernel I space PAR#1
+0772344		KISA2	MMU		Kernel I space PAR#2
+0772346		KISA3	MMU		Kernel I space PAR#3
+0772350		KISA4	MMU		Kernel I space PAR#4
+0772352		KISA5	MMU		Kernel I space PAR#5
+0772354		KISA6	MMU		Kernel I space PAR#6
+0772356		KISA7	MMU		Kernel I space PAR#7
+0772360		KDSA0	MMU		Kernel D space PAR#0
+0772362		KDSA1	MMU		Kernel D space PAR#1
+0772364		KDSA2	MMU		Kernel D space PAR#2
+0772366		KDSA3	MMU		Kernel D space PAR#3
+0772370		KDSA4	MMU		Kernel D space PAR#4
+0772372		KDSA5	MMU		Kernel D space PAR#5
+0772374		KDSA6	MMU		Kernel D space PAR#6
+0772376		KDSA7	MMU		Kernel D space PAR#7
+0777600		UISD0	MMU		User I space PDR#0
+0777602		UISD1	MMU		User I space PDR#1
+0777604		UISD2	MMU		User I space PDR#2
+0777606		UISD3	MMU		User I space PDR#3
+0777610		UISD4	MMU		User I space PDR#4
+0777612		UISD5	MMU		User I space PDR#5
+0777614		UISD6	MMU		User I space PDR#6
+0777616		UISD7	MMU		User I space PDR#7
+0777620		UDSD0	MMU		User D space PDR#0
+0777622		UDSD1	MMU		User D space PDR#1
+0777624		UDSD2	MMU		User D space PDR#2
+0777626		UDSD3	MMU		User D space PDR#3
+0777630		UDSD4	MMU		User D space PDR#4
+0777632		UDSD5	MMU		User D space PDR#5
+0777634		UDSD6	MMU		User D space PDR#6
+0777636		UDSD7	MMU		User D space PDR#7
+0777640		UISA0	MMU		User I space PAR#0
+0777642		UISA1	MMU		User I space PAR#1
+0777644		UISA2	MMU		User I space PAR#2
+0777646		UISA3	MMU		User I space PAR#3
+0777650		UISA4	MMU		User I space PAR#4
+0777652		UISA5	MMU		User I space PAR#5
+0777654		UISA6	MMU		User I space PAR#6
+0777656		UISA7	MMU		User I space PAR#7
+0777660		UDSA0	MMU		User D space PAR#0
+0777662		UDSA1	MMU		User D space PAR#1
+0777664		UDSA2	MMU		User D space PAR#2
+0777666		UDSA3	MMU		User D space PAR#3
+0777670		UDSA4	MMU		User D space PAR#4
+0777672		UDSA5	MMU		User D space PAR#5
+0777674		UDSA6	MMU		User D space PAR#6
+0777676		UDSA7	MMU		User D space PAR#7
+
+

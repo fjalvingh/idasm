@@ -29,6 +29,9 @@ final public class InfoModel {
 		m_file = file;
 	}
 
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Save and load of the model									*/
+	/*----------------------------------------------------------------------*/
 	/**
 	 * Save the current model.
 	 */
@@ -48,7 +51,7 @@ final public class InfoModel {
 
 		//-- Labels
 		List<Label> userLabels = m_labelMap.values().stream()
-			.filter(a -> a.isUserDefined())
+			.filter(a -> a.getType() == LabelType.User)
 			.collect(Collectors.toList());
 		so.setUserLabelList(userLabels);
 
@@ -97,6 +100,11 @@ final public class InfoModel {
 		}
 	}
 
+	/*----------------------------------------------------------------------*/
+	/*	CODING:	Regions														*/
+	/*----------------------------------------------------------------------*/
+
+
 	public void addRegion(RegionType type, int start, int end) {
 		m_regionModel.addRegion(type, start, end);
 	}
@@ -112,20 +120,25 @@ final public class InfoModel {
 	/**
 	 * Set a user label.
 	 */
-	public Label setLabel(int address, String label, AddrTarget type) {
+	public Label setLabel(int address, String label, AddrTarget targetType) {
+		return setLabel(LabelType.User, address, label, targetType);
+	}
+
+	public Label setLabel(LabelType type, int address, String label, AddrTarget targetType) {
 		Label old = m_labelMap.get(address);
 		if(null == old) {
-			old = new Label(address, label, type, true);
+			old = new Label(type, address, label, targetType);
 			m_labelMap.put(address, old);
 			return old;
 		}
 
 		//-- Update this label
 		old.setType(type);
+		old.setTargetType(targetType);
 		old.setName(label);
-		old.setUserDefined(true);
 		return old;
 	}
+
 
 	/**
 	 * Add an automatic label. If a label already exists, either
@@ -137,7 +150,7 @@ final public class InfoModel {
 			return old;
 		}
 
-		old = new Label(address, proposedName, type, false);
+		old = new Label(LabelType.Auto, address, proposedName, type);
 		m_labelMap.put(address, old);
 		return old;
 	}
@@ -190,7 +203,4 @@ final public class InfoModel {
 		}
 		save();
 	}
-
-
-
 }

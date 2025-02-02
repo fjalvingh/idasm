@@ -1,6 +1,7 @@
 package to.etc.dec.idasm.disassembler.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import org.eclipse.jdt.annotation.Nullable;
 import to.etc.dec.idasm.disassembler.disassembler.AddrTarget;
 
 /**
@@ -11,22 +12,34 @@ final public class Label {
 
 	private String m_name;
 
-	private AddrTarget m_type;
+	private LabelType m_type;
+
+	private AddrTarget m_targetType;
 
 	private int[] m_usedFrom = new int[10];
 
 	private int m_usedFromIndex;
 
-	private boolean m_userDefined;
+	/**
+	 * For predefined labels: the documentation, if present
+	 */
+	@Nullable
+	private Documentation m_documentation;
+
+	/**
+	 * For predefined labels: the description.
+	 */
+	@Nullable
+	private String m_description;
 
 	public Label() {
 	}
 
-	public Label(int address, String name, AddrTarget type, boolean userDefined) {
+	public Label(LabelType type, int address, String name, AddrTarget targetType) {
+		m_type = type;
 		m_address = address;
 		m_name = name;
-		m_type = type;
-		m_userDefined = userDefined;
+		m_targetType = targetType;
 	}
 
 	public int getAddress() {
@@ -45,21 +58,36 @@ final public class Label {
 		m_name = name;
 	}
 
-	public AddrTarget getType() {
+	public AddrTarget getTargetType() {
+		return m_targetType;
+	}
+
+	public void setTargetType(AddrTarget targetType) {
+		m_targetType = targetType;
+	}
+
+	@JsonIgnore
+	public LabelType getType() {
 		return m_type;
 	}
 
-	public void setType(AddrTarget type) {
+	public void setType(LabelType type) {
 		m_type = type;
 	}
 
 	@JsonIgnore
-	public boolean isUserDefined() {
-		return m_userDefined;
+	@Nullable public Documentation getDocumentation() {
+		return m_documentation;
 	}
 
-	public void setUserDefined(boolean userDefined) {
-		m_userDefined = userDefined;
+	@JsonIgnore
+	@Nullable public String getDescription() {
+		return m_description;
+	}
+
+	public void updatePredefined(@Nullable Documentation documentation, @Nullable String description) {
+		m_documentation = documentation;
+		m_description = description;
 	}
 
 	@JsonIgnore
